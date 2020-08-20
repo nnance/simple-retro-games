@@ -1,60 +1,36 @@
 import React from "react";
+import {
+  IParticle,
+  updater,
+  movementSystem,
+  useAnimationFrame,
+  IPoint,
+  IRect,
+} from "../lib/engine";
 
-interface IPoint {
-  x: number;
-  y: number;
-}
+const Ball = ({ x, y }: IPoint) => {
+  const [ball, setBall] = React.useState<IParticle[]>([
+    {
+      pos: { x, y },
+      radius: 20,
+      velocity: { x: 2, y: 2 },
+    },
+  ]);
 
-interface IRect {
-  width: number;
-  height: number;
-}
+  const loop = updater([movementSystem]);
+  useAnimationFrame(() => setBall(loop));
 
-interface IParticle {
-  pos: IPoint;
-  radius?: number;
-  velocity?: IPoint;
-}
-
-const useAnimationFrame = (updater: () => void) => {
-  const frame = React.useRef(0);
-
-  React.useEffect(() => {
-    function loop(): void {
-      frame.current = requestAnimationFrame(() => {
-        updater();
-        loop();
-      });
-    }
-    loop();
-
-    return (): void => cancelAnimationFrame(frame.current);
-  }, [updater]);
+  return (
+    <circle
+      r={ball[0].radius}
+      cx={ball[0].pos.x}
+      cy={ball[0].pos.y}
+      stroke="grey"
+    />
+  );
 };
 
-const Ball = ({ pos: { x, y }, radius }: IParticle) => {
-  return <circle r={radius} cx={x} cy={y} stroke="grey" />;
-};
-
-const Bounce = () => {
-  const [ball, setBall] = React.useState<IParticle>({
-    pos: { x: 30, y: 30 },
-    radius: 20,
-    velocity: { x: 2, y: 2 },
-  });
-
-  useAnimationFrame(() => {
-    setBall((state) => ({
-      ...state,
-      pos: state.velocity
-        ? {
-            x: state.pos.x + state.velocity.x,
-            y: state.pos.y + state.velocity.y,
-          }
-        : { ...state.pos },
-    }));
-  });
-
+const Board = (props: React.PropsWithChildren<IRect>) => {
   return (
     <svg
       width={800}
@@ -63,8 +39,16 @@ const Bounce = () => {
         background: "black",
       }}
     >
-      <Ball {...ball} />
+      {props.children}
     </svg>
+  );
+};
+
+const Bounce = () => {
+  return (
+    <Board width={800} height={600}>
+      <Ball x={30} y={30} />
+    </Board>
   );
 };
 
