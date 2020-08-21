@@ -15,18 +15,37 @@ import { RecoilRoot, useSetRecoilState } from "recoil";
 const collisionSystem: ISystem = (particles) =>
   particles.map((particle) => {
     const collision = () => {
-      if (
-        particle.velocity &&
-        particle.radius &&
-        particle.pos.y + particle.radius > 590
-      ) {
+      if (particle.velocity && particle.radius) {
         const { pos, velocity, radius } = particle;
-        return {
-          ...particle,
-          pos: { ...pos, y: pos.y - radius },
-          velocity: { ...velocity, y: velocity.y * -1 },
-        };
-      } else return particle;
+
+        if (particle.pos.y + particle.radius > 590) {
+          return {
+            ...particle,
+            pos: { ...pos, y: pos.y - radius },
+            velocity: { ...velocity, y: velocity.y * -1 },
+          };
+        } else if (particle.pos.y - particle.radius < 10) {
+          return {
+            ...particle,
+            pos: { ...pos, y: pos.y + radius },
+            velocity: { ...velocity, y: velocity.y * -1 },
+          };
+        } else if (particle.pos.x + particle.radius > 790) {
+          return {
+            ...particle,
+            pos: { ...pos, x: pos.x - radius },
+            velocity: { ...velocity, x: velocity.x * -1 },
+          };
+        } else if (particle.pos.x - particle.radius < 10) {
+          return {
+            ...particle,
+            pos: { ...pos, x: pos.x + radius },
+            velocity: { ...velocity, x: velocity.x * -1 },
+          };
+        }
+        return particle;
+      }
+      return particle;
     };
 
     return particle.velocity ? collision() : particle;
