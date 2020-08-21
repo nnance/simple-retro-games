@@ -1,24 +1,9 @@
 import React from "react";
+import { ISystem, IParticle } from "./types";
 
-export interface IPoint {
-  x: number;
-  y: number;
-}
+const MAX_NUM = 100000;
 
-export interface IRect {
-  width: number;
-  height: number;
-}
-
-export interface IParticle {
-  pos: IPoint;
-  radius?: number;
-  velocity?: IPoint;
-}
-
-export interface ISystem {
-  (particles: IParticle[]): IParticle[];
-}
+export const idFactory = () => Math.floor(Math.random() * MAX_NUM);
 
 export const movementSystem: ISystem = (
   particles: IParticle[]
