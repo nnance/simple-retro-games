@@ -12,6 +12,7 @@ export interface IParticle {
   id: number;
   pos: IPoint;
   radius?: number;
+  size?: IRect;
   velocity?: IPoint;
 }
 
