@@ -23,7 +23,7 @@ const Wall = (props: IPoint & IRect) => {
 };
 
 const Ball = ({ x, y }: IPoint) => {
-  const ball = useRegisterParticle({
+  const [ball] = useRegisterParticle({
     id: idFactory(),
     pos: { x, y },
     radius: 20,
