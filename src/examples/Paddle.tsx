@@ -11,16 +11,20 @@ import {
   collisionSystem,
   IParticle,
   useGameControls,
+  ISystem,
+  eventList,
 } from "../lib";
-import { RecoilRoot, useSetRecoilState } from "recoil";
+import { RecoilRoot, useRecoilState, useSetRecoilState } from "recoil";
 
 const brickSize = { width: 60, height: 20 };
 const rows = 2;
 const cols = 7;
 
 const Brick = ({ body }: { body: IParticle }) => {
-  useRegisterParticle(body);
-  return <rect {...body.pos} {...body.size!} stroke="grey" fill="none" />;
+  const [brick] = useRegisterParticle(body);
+  return brick ? (
+    <rect {...brick.pos} {...brick.size} stroke="grey" fill="none" />
+  ) : null;
 };
 
 const Grid = ({ x, y }: IPoint) => {
@@ -30,6 +34,7 @@ const Grid = ({ x, y }: IPoint) => {
     Array.from(Array(rows), (_, row) =>
       Array.from(Array(cols), (_, col) => ({
         id: idFactory(),
+        family: "brick",
         pos: { x: x + width * col, y: y + row * height },
         size: { width, height },
       }))
@@ -75,14 +80,17 @@ const Ball = ({ x, y }: IPoint) => {
 };
 
 const Paddle = ({ x, y, width, height }: IPoint & IRect) => {
-  const [paddle, setPaddle] = useRegisterParticle({
+  const setEvents = useSetRecoilState(eventList);
+  const [paddle] = useRegisterParticle({
     id: idFactory(),
     pos: { x, y },
     size: { width, height },
   });
 
-  const updateVelocity = (x: number) => () =>
-    setPaddle((paddle) => ({ ...paddle!, velocity: { x, y: 0 } }));
+  const updateVelocity = React.useCallback(
+    (x: number) => () => setEvents((events) => [...events]),
+    [setEvents]
+  );
 
   useGameControls({
     leftArrow: updateVelocity(-7),
@@ -95,21 +103,38 @@ const Paddle = ({ x, y, width, height }: IPoint & IRect) => {
   ) : null;
 };
 
-const Board = (props: React.PropsWithChildren<IRect>) => {
-  const setParticles = useSetRecoilState(particleList);
-  const loop = updater([movementSystem, collisionSystem]);
+const brickCollisionSystem: ISystem = (world) => {
+  const particles = world.particles.reduce((prev, particle) => {
+    const hit = world.events.find(
+      (_) => _.particle.id === particle.id && particle.family === "brick"
+    );
+    return hit ? prev : [...prev, particle];
+  }, [] as IParticle[]);
+  return { ...world, particles };
+};
 
-  useAnimationFrame(() => setParticles(loop));
+const Board = ({ children, ...props }: React.PropsWithChildren<IRect>) => {
+  const [particles, setParticles] = useRecoilState(particleList);
+
+  const gameLoop = updater([
+    movementSystem,
+    collisionSystem,
+    brickCollisionSystem,
+  ]);
+
+  useAnimationFrame(() => {
+    const newWorld = gameLoop({ particles, events: [] });
+    setParticles(newWorld.particles);
+  });
 
   return (
     <svg
-      width={props.width}
-      height={props.height}
+      {...props}
       style={{
         background: "black",
       }}
     >
-      {props.children}
+      {children}
     </svg>
   );
 };

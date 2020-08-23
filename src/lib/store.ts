@@ -5,10 +5,15 @@ import {
   useSetRecoilState,
   useRecoilState,
 } from "recoil";
-import { IParticle } from "./types";
+import { IParticle, IParticleEvent } from "./types";
 
 export const particleList = atom<IParticle[]>({
   key: "particleList",
+  default: [],
+});
+
+export const eventList = atom<IParticleEvent[]>({
+  key: "particleEvents",
   default: [],
 });
 
@@ -34,3 +39,12 @@ export const useRegisterParticle = (particle: IParticle) => {
 
   return useRecoilState(particleSelector(ref.current.id));
 };
+
+export const eventSelector = selectorFamily<IParticleEvent | undefined, number>(
+  {
+    key: "eventSelector",
+    get: (id) => ({ get }) => {
+      return get(eventList).find((event) => event.particle.id === id);
+    },
+  }
+);

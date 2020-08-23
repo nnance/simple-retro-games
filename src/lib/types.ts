@@ -10,12 +10,30 @@ export interface IRect {
 
 export interface IParticle {
   id: number;
+  family?: string;
   pos: IPoint;
   radius?: number;
   size?: IRect;
   velocity?: IPoint;
 }
 
+export enum EventType {
+  movePaddle,
+  collision,
+}
+
+export interface IParticleEvent {
+  particle: IParticle;
+  type: EventType;
+  collider?: IParticle;
+  velocity?: IPoint;
+}
+
+export interface IWorld {
+  particles: IParticle[];
+  events: IParticleEvent[];
+}
+
 export interface ISystem {
-  (particles: IParticle[]): IParticle[];
+  (world: IWorld): IWorld;
 }

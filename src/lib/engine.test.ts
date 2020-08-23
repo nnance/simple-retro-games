@@ -1,4 +1,4 @@
-import { movementSystem, idFactory, collisionSystem } from "./engine";
+import { movementSystem, idFactory, collisionSystem, updater } from "./engine";
 import { IParticle } from "./types";
 
 test("moves based on velocity", () => {
@@ -8,11 +8,15 @@ test("moves based on velocity", () => {
     radius: 20,
     velocity: { x: 5, y: 5 },
   };
-  const updated = movementSystem([ball]);
 
-  expect(updated.length).toEqual(1);
-  expect(updated[0].pos.x).toEqual(15);
-  expect(updated[0].pos.y).toEqual(15);
+  const { particles } = movementSystem({
+    particles: [ball],
+    events: [],
+  });
+
+  expect(particles.length).toEqual(1);
+  expect(particles[0].pos.x).toEqual(15);
+  expect(particles[0].pos.y).toEqual(15);
 });
 
 test("detects circle bottom collision", () => {
@@ -28,11 +32,14 @@ test("detects circle bottom collision", () => {
     size: { width: 100, height: 10 },
   };
 
-  const updated = collisionSystem([ball, wall]);
+  const { particles } = collisionSystem({
+    particles: [ball, wall],
+    events: [],
+  });
 
-  expect(updated.length).toEqual(2);
-  expect(updated[0].pos.y).toEqual(80);
-  expect(updated[0].velocity?.y).toEqual(-5);
+  expect(particles.length).toEqual(2);
+  expect(particles[0].pos.y).toEqual(80);
+  expect(particles[0].velocity?.y).toEqual(-5);
 });
 
 test("detects circle top collision", () => {
@@ -48,11 +55,14 @@ test("detects circle top collision", () => {
     size: { width: 100, height: 10 },
   };
 
-  const updated = collisionSystem([ball, wall]);
+  const { particles } = collisionSystem({
+    particles: [ball, wall],
+    events: [],
+  });
 
-  expect(updated.length).toEqual(2);
-  expect(updated[0].pos.y).toEqual(30);
-  expect(updated[0].velocity?.y).toEqual(5);
+  expect(particles.length).toEqual(2);
+  expect(particles[0].pos.y).toEqual(30);
+  expect(particles[0].velocity?.y).toEqual(5);
 });
 
 test("detects circle right collision", () => {
@@ -68,12 +78,15 @@ test("detects circle right collision", () => {
     size: { width: 10, height: 100 },
   };
 
-  const updated = collisionSystem([ball, wall]);
+  const { particles } = collisionSystem({
+    particles: [ball, wall],
+    events: [],
+  });
 
-  expect(updated.length).toEqual(2);
-  expect(updated[0].pos.y).toEqual(10);
-  expect(updated[0].pos.x).toEqual(80);
-  expect(updated[0].velocity?.x).toEqual(-5);
+  expect(particles.length).toEqual(2);
+  expect(particles[0].pos.y).toEqual(10);
+  expect(particles[0].pos.x).toEqual(80);
+  expect(particles[0].velocity?.x).toEqual(-5);
 });
 
 test("detects circle left collision", () => {
@@ -89,10 +102,63 @@ test("detects circle left collision", () => {
     size: { width: 10, height: 100 },
   };
 
-  const updated = collisionSystem([ball, wall]);
+  const { particles } = collisionSystem({
+    particles: [ball, wall],
+    events: [],
+  });
 
-  expect(updated.length).toEqual(2);
-  expect(updated[0].pos.y).toEqual(10);
-  expect(updated[0].pos.x).toEqual(30);
-  expect(updated[0].velocity?.x).toEqual(-5);
+  expect(particles.length).toEqual(2);
+  expect(particles[0].pos.y).toEqual(10);
+  expect(particles[0].pos.x).toEqual(30);
+  expect(particles[0].velocity?.x).toEqual(-5);
+});
+
+test("publishes events on circle collision", () => {
+  const ball: IParticle = {
+    id: idFactory(),
+    pos: { x: 100, y: 85 },
+    radius: 20,
+    velocity: { x: 5, y: 5 },
+  };
+  const wall: IParticle = {
+    id: idFactory(),
+    pos: { x: 50, y: 100 },
+    size: { width: 100, height: 10 },
+  };
+
+  const { events } = collisionSystem({
+    particles: [ball, wall],
+    events: [],
+  });
+
+  expect(events.length).toEqual(1);
+  expect(events[0].particle.id).toEqual(wall.id);
+  expect(events[0].collider?.id).toEqual(ball.id);
+});
+
+test("publishes collision event after game loop", () => {
+  const ball: IParticle = {
+    id: idFactory(),
+    pos: { x: 100, y: 75 },
+    radius: 20,
+    velocity: { x: 5, y: 5 },
+  };
+  const wall: IParticle = {
+    id: idFactory(),
+    pos: { x: 50, y: 100 },
+    size: { width: 100, height: 10 },
+  };
+
+  const gameLoop = updater([movementSystem, collisionSystem]);
+
+  const newWorld = gameLoop({
+    particles: [ball, wall],
+    events: [],
+  });
+
+  const { events } = gameLoop({ ...newWorld, events: [] });
+
+  expect(events.length).toEqual(1);
+  expect(events[0].particle.id).toEqual(wall.id);
+  expect(events[0].collider?.id).toEqual(ball.id);
 });

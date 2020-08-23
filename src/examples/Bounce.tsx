@@ -10,7 +10,7 @@ import {
   particleList,
   collisionSystem,
 } from "../lib";
-import { RecoilRoot, useSetRecoilState } from "recoil";
+import { RecoilRoot, useRecoilState } from "recoil";
 
 const Wall = (props: IPoint & IRect) => {
   const wall = useRegisterParticle({
@@ -42,15 +42,17 @@ const Ball = ({ x, y }: IPoint) => {
 };
 
 const Board = (props: React.PropsWithChildren<IRect>) => {
-  const setParticles = useSetRecoilState(particleList);
-  const loop = updater([movementSystem, collisionSystem]);
+  const [particles, setParticles] = useRecoilState(particleList);
+  const gameLoop = updater([movementSystem, collisionSystem]);
 
-  useAnimationFrame(() => setParticles(loop));
+  useAnimationFrame(() => {
+    const updated = gameLoop({ particles, events: [] });
+    setParticles(updated.particles);
+  });
 
   return (
     <svg
-      width={800}
-      height={600}
+      {...props}
       style={{
         background: "black",
       }}
