@@ -8,6 +8,7 @@ import {
   collisionSystem,
   useAnimationFrame,
   IPoint,
+  ISystem,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
@@ -38,10 +39,24 @@ const Ball = ({ pos, radius }: IParticle) => {
   return <circle r={radius} cx={pos.x} cy={pos.y} stroke="grey" fill="none" />;
 };
 
+const brickCollisionSystem: ISystem = (world) => {
+  const particles = world.particles.reduce((prev, particle) => {
+    const hit = world.events.find(
+      (_) => _.particle.id === particle.id && particle.family === "brick"
+    );
+    return hit ? prev : [...prev, particle];
+  }, [] as IParticle[]);
+  return { ...world, particles };
+};
+
 const Board = (props: React.PropsWithChildren<IRect>) => {
   const [particles, setParticles] = React.useContext(GameContext);
 
-  const gameLoop = updater([movementSystem, collisionSystem]);
+  const gameLoop = updater([
+    movementSystem,
+    collisionSystem,
+    brickCollisionSystem,
+  ]);
 
   useAnimationFrame(() => {
     const newWorld = gameLoop({ particles, events: [] });
