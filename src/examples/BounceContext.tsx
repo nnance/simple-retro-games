@@ -9,11 +9,24 @@ import {
   useAnimationFrame,
 } from "../lib";
 
+const GameContext = React.createContext<
+  [IParticle[], React.Dispatch<React.SetStateAction<IParticle[]>>]
+>([[], () => []]);
+
 const Ball = ({ pos, radius }: IParticle) => {
   return <circle r={radius} cx={pos.x} cy={pos.y} stroke="grey" fill="none" />;
 };
 
 const Board = (props: React.PropsWithChildren<IRect>) => {
+  const [particles, setParticles] = React.useContext(GameContext);
+
+  const gameLoop = updater([movementSystem, collisionSystem]);
+
+  useAnimationFrame(() => {
+    const newWorld = gameLoop({ particles, events: [] });
+    setParticles(newWorld.particles);
+  });
+
   return (
     <svg
       {...props}
@@ -21,7 +34,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
         background: "black",
       }}
     >
-      {props.children}
+      <Ball {...particles[0]} />
     </svg>
   );
 };
@@ -58,19 +71,12 @@ const particleFactory = (): IParticle[] => {
 };
 
 const Bounce = () => {
-  const [particles, setParticles] = React.useState(particleFactory);
-
-  const gameLoop = updater([movementSystem, collisionSystem]);
-
-  useAnimationFrame(() => {
-    const newWorld = gameLoop({ particles, events: [] });
-    setParticles(newWorld.particles);
-  });
+  const particlesState = React.useState(particleFactory);
 
   return (
-    <Board width={800} height={600}>
-      <Ball {...particles[0]} />
-    </Board>
+    <GameContext.Provider value={particlesState}>
+      <Board width={800} height={600}></Board>
+    </GameContext.Provider>
   );
 };
 
