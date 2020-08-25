@@ -2,43 +2,24 @@ import React from "react";
 import {
   IParticle,
   idFactory,
-  ISystem,
   movementSystem,
   updater,
   IWorld,
   collisionSystem,
+  renderer,
+  gameLoop,
 } from "../lib";
 
-const render = (ctx: CanvasRenderingContext2D, particles: IParticle[]) => {
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-  const ball = particles.find((_) => _.family === "ball");
-
-  if (ball) {
-    ctx.strokeStyle = "grey";
-    ctx.beginPath();
-    ctx.arc(ball.pos.x, ball.pos.y, ball.radius!, 0, Math.PI * 2, true); // Outer circle
-    ctx.stroke();
-  }
-};
-
-const startGame = (
-  ctx: CanvasRenderingContext2D,
-  systems: ISystem[],
-  particles: IParticle[]
-) => {
-  const update = updater(systems);
-
-  const loop = (world: IWorld) => {
-    const newWorld = update(world);
-    render(ctx, newWorld.particles);
-
-    requestAnimationFrame(() => {
-      loop(newWorld);
-    });
-  };
-
-  loop({ particles, events: [] });
+const circleSystem = (ctx: CanvasRenderingContext2D) => (world: IWorld) => {
+  world.particles.forEach((ball) => {
+    if (ball.radius) {
+      ctx.strokeStyle = "grey";
+      ctx.beginPath();
+      ctx.arc(ball.pos.x, ball.pos.y, ball.radius!, 0, Math.PI * 2, true); // Outer circle
+      ctx.stroke();
+    }
+  });
+  return world;
 };
 
 const particleFactory = (): IParticle[] => {
@@ -78,10 +59,14 @@ const Bounce = () => {
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
-    const particles = particleFactory();
-    const systems = [movementSystem, collisionSystem];
 
-    if (ctx) startGame(ctx, systems, particles);
+    if (ctx) {
+      const update = updater([movementSystem, collisionSystem]);
+      const render = renderer(ctx, [circleSystem(ctx)]);
+      const particles = particleFactory();
+
+      gameLoop(ctx, update, render, particles);
+    }
   }, [canvasRef]);
 
   return (

@@ -87,6 +87,34 @@ export const updater = (systems: ISystem[]) => (world: IWorld): IWorld => {
   return systems.reduce((prev, system) => system(prev), world);
 };
 
+export const renderer = (ctx: CanvasRenderingContext2D, systems: ISystem[]) => (
+  world: IWorld
+) => {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  systems.forEach((system) => system(world));
+  return world;
+};
+
+export const gameLoop = (
+  ctx: CanvasRenderingContext2D,
+  update: ISystem,
+  render: ISystem,
+  particles: IParticle[]
+) => {
+  const loop = (world: IWorld) => {
+    const newWorld = update(world);
+
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    render(newWorld);
+
+    requestAnimationFrame(() => {
+      loop(newWorld);
+    });
+  };
+
+  loop({ particles, events: [] });
+};
+
 export const useAnimationFrame = (updater: () => void) => {
   const frame = React.useRef(0);
 
