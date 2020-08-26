@@ -29,6 +29,12 @@ export interface IParticleEvent {
   velocity?: IPoint;
 }
 
+export interface IEventsStore {
+  get: () => IParticleEvent[];
+  push: (event: IParticleEvent) => void;
+  reset: () => void;
+}
+
 export interface IWorld {
   particles: IParticle[];
   events: IParticleEvent[];

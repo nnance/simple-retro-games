@@ -10,6 +10,10 @@ import {
   circleSystem,
   gameLoop,
   rectangleSystem,
+  gameControls,
+  EventType,
+  createEvents,
+  IEventsStore,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
@@ -23,7 +27,33 @@ const brickCollisionSystem: ISystem = (world) => {
     );
     return hit ? prev : [...prev, particle];
   }, [] as IParticle[]);
+
   return { ...world, particles };
+};
+
+const paddleMovementSystem: ISystem = (world) => {
+  const event = world.events.find((_) => _.type === EventType.movePaddle);
+
+  const particles = world.particles.map((particle) => {
+    return event && event.particle.id === particle.id
+      ? {
+          ...particle,
+          velocity: event.velocity,
+        }
+      : particle;
+  });
+
+  return { ...world, particles };
+};
+
+const pushPaddleEvent = (eventStore: IEventsStore, paddle?: IParticle) => (
+  x: number
+) => () => {
+  eventStore.push({
+    particle: paddle!,
+    type: EventType.movePaddle,
+    velocity: { x, y: 0 },
+  });
 };
 
 const particleFactory = (): IParticle[] => {
@@ -82,23 +112,37 @@ const particleFactory = (): IParticle[] => {
   ];
 };
 
+const startGame = (ctx: CanvasRenderingContext2D) => {
+  const particles = particleFactory();
+  const eventStore = createEvents();
+  const paddle = particles.find((_) => _.family === "paddle");
+
+  const pushEvent = pushPaddleEvent(eventStore, paddle);
+
+  gameControls({
+    rightArrow: pushEvent(7),
+    leftArrow: pushEvent(-7),
+    keyUp: pushEvent(0),
+  });
+
+  const update = updater([
+    paddleMovementSystem,
+    movementSystem,
+    collisionSystem,
+    brickCollisionSystem,
+  ]);
+
+  const render = renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]);
+
+  gameLoop(ctx, update, render, particles, eventStore);
+};
+
 const Bounce = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
-
-    if (ctx) {
-      const update = updater([
-        movementSystem,
-        collisionSystem,
-        brickCollisionSystem,
-      ]);
-      const render = renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]);
-      const particles = particleFactory();
-
-      gameLoop(ctx, update, render, particles);
-    }
+    if (ctx) startGame(ctx);
   }, [canvasRef]);
 
   return (

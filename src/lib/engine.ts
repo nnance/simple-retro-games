@@ -1,5 +1,5 @@
 import React from "react";
-import { ISystem, IParticle, IWorld, EventType } from "./types";
+import { ISystem, IParticle, IWorld, EventType, IEventsStore } from "./types";
 
 const MAX_NUM = 100000;
 
@@ -99,10 +99,16 @@ export const gameLoop = (
   ctx: CanvasRenderingContext2D,
   update: ISystem,
   render: ISystem,
-  particles: IParticle[]
+  particles: IParticle[],
+  eventStore?: IEventsStore
 ) => {
   const loop = (world: IWorld) => {
-    const newWorld = update(world);
+    const newWorld = update({
+      ...world,
+      events: eventStore ? eventStore.get() : [],
+    });
+
+    if (eventStore) eventStore.reset();
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     render(newWorld);

@@ -5,7 +5,7 @@ import {
   useSetRecoilState,
   useRecoilState,
 } from "recoil";
-import { IParticle, IParticleEvent } from "./types";
+import { IParticle, IParticleEvent, IEventsStore } from "./types";
 
 export const particleList = atom<IParticle[]>({
   key: "particleList",
@@ -48,3 +48,13 @@ export const eventSelector = selectorFamily<IParticleEvent | undefined, number>(
     },
   }
 );
+
+export const createEvents = (): IEventsStore => {
+  let events: IParticleEvent[] = [];
+
+  return {
+    get: () => events,
+    push: (event: IParticleEvent) => (events = [...events, event]),
+    reset: () => (events = []),
+  };
+};
