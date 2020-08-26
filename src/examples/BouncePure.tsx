@@ -3,24 +3,12 @@ import {
   IParticle,
   idFactory,
   movementSystem,
-  updater,
-  IWorld,
   collisionSystem,
+  updater,
   renderer,
   gameLoop,
+  circleSystem,
 } from "../lib";
-
-const circleSystem = (ctx: CanvasRenderingContext2D) => (world: IWorld) => {
-  world.particles.forEach((ball) => {
-    if (ball.radius) {
-      ctx.strokeStyle = "grey";
-      ctx.beginPath();
-      ctx.arc(ball.pos.x, ball.pos.y, ball.radius!, 0, Math.PI * 2, true); // Outer circle
-      ctx.stroke();
-    }
-  });
-  return world;
-};
 
 const particleFactory = (): IParticle[] => {
   return [
