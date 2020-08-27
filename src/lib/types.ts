@@ -17,18 +17,14 @@ export interface IParticle {
   velocity?: IPoint;
   points?: [number, number][];
   angle?: number;
-}
-
-export enum EventType {
-  movePaddle,
-  collision,
+  rotation?: number;
 }
 
 export interface IParticleEvent {
   particle: IParticle;
-  type: EventType;
   collider?: IParticle;
   velocity?: IPoint;
+  rotation?: number;
 }
 
 export interface IEventsStore {

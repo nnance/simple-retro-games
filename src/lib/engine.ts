@@ -1,23 +1,9 @@
 import React from "react";
-import { ISystem, IParticle, IWorld, EventType, IEventsStore } from "./types";
+import { ISystem, IParticle, IWorld, IEventsStore } from "./types";
 
 const MAX_NUM = 100000;
 
 export const idFactory = () => Math.floor(Math.random() * MAX_NUM);
-
-export const movementSystem: ISystem = (world) => {
-  const particles = world.particles.map((state) => ({
-    ...state,
-    pos: state.velocity
-      ? {
-          x: state.pos.x + state.velocity.x,
-          y: state.pos.y + state.velocity.y,
-        }
-      : { ...state.pos },
-  }));
-
-  return { ...world, particles };
-};
 
 const checkParticles = (world: IWorld) => (particle: IParticle) => {
   if (particle.velocity && particle.radius) {
@@ -62,7 +48,6 @@ const checkParticles = (world: IWorld) => (particle: IParticle) => {
 
           world.events.push({
             particle: part,
-            type: EventType.collision,
             collider: particle,
           });
         }

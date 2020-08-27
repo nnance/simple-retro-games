@@ -11,9 +11,9 @@ import {
   gameLoop,
   rectangleSystem,
   gameControls,
-  EventType,
   createEvents,
   IEventsStore,
+  velocityEventSystem,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
@@ -31,27 +31,11 @@ const brickCollisionSystem: ISystem = (world) => {
   return { ...world, particles };
 };
 
-const paddleMovementSystem: ISystem = (world) => {
-  const event = world.events.find((_) => _.type === EventType.movePaddle);
-
-  const particles = world.particles.map((particle) => {
-    return event && event.particle.id === particle.id
-      ? {
-          ...particle,
-          velocity: event.velocity,
-        }
-      : particle;
-  });
-
-  return { ...world, particles };
-};
-
 const pushPaddleEvent = (eventStore: IEventsStore, paddle?: IParticle) => (
   x: number
 ) => () => {
   eventStore.push({
     particle: paddle!,
-    type: EventType.movePaddle,
     velocity: { x, y: 0 },
   });
 };
@@ -126,7 +110,7 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
   });
 
   const update = updater([
-    paddleMovementSystem,
+    velocityEventSystem,
     movementSystem,
     collisionSystem,
     brickCollisionSystem,
