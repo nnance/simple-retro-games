@@ -137,7 +137,7 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
   gameLoop(ctx, update, render, particles, eventStore);
 };
 
-const Bounce = () => {
+const Bricks = () => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
@@ -157,4 +157,4 @@ const Bounce = () => {
   );
 };
 
-export default Bounce;
+export default Bricks;

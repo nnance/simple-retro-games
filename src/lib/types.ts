@@ -15,6 +15,8 @@ export interface IParticle {
   radius?: number;
   size?: IRect;
   velocity?: IPoint;
+  points?: [number, number][];
+  angle?: number;
 }
 
 export enum EventType {

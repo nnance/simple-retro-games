@@ -170,7 +170,7 @@ const particleFactory = (): IParticle[] => {
   ];
 };
 
-const Bounce = () => {
+const Bricks = () => {
   const particlesState = React.useState(particleFactory);
 
   return (
@@ -180,4 +180,4 @@ const Bounce = () => {
   );
 };
 
-export default Bounce;
+export default Bricks;
