@@ -1,107 +1,24 @@
-import React, { Fragment } from "react";
+import React from "react";
 import {
+  idFactory,
+  IParticle,
   updater,
   movementSystem,
-  useAnimationFrame,
-  IPoint,
-  IRect,
-  idFactory,
-  useRegisterParticle,
-  particleList,
   collisionSystem,
-  IParticle,
-  useGameControls,
   ISystem,
-  eventList,
+  renderer,
+  circleSystem,
+  gameLoop,
+  rectangleSystem,
+  gameControls,
+  EventType,
+  createEvents,
+  IEventsStore,
 } from "../lib";
-import { RecoilRoot, useRecoilState, useSetRecoilState } from "recoil";
 
 const brickSize = { width: 60, height: 20 };
 const rows = 2;
 const cols = 7;
-
-const Brick = ({ body }: { body: IParticle }) => {
-  const [brick] = useRegisterParticle(body);
-  return brick ? (
-    <rect {...brick.pos} {...brick.size} stroke="grey" fill="none" />
-  ) : null;
-};
-
-const Grid = ({ x, y }: IPoint) => {
-  const { width, height } = brickSize;
-
-  const bricksRef = React.useRef(
-    Array.from(Array(rows), (_, row) =>
-      Array.from(Array(cols), (_, col) => ({
-        id: idFactory(),
-        family: "brick",
-        pos: { x: x + width * col, y: y + row * height },
-        size: { width, height },
-      }))
-    )
-  );
-
-  return (
-    <Fragment>
-      {bricksRef.current.flat().map((brick) => (
-        <Brick body={brick} />
-      ))}
-    </Fragment>
-  );
-};
-
-const Wall = (props: IPoint & IRect) => {
-  useRegisterParticle({
-    id: idFactory(),
-    pos: { x: props.x, y: props.y },
-    size: { width: props.width, height: props.height },
-  });
-
-  return <rect {...props} stroke="grey" fill="none" />;
-};
-
-const Ball = ({ x, y }: IPoint) => {
-  const [ball] = useRegisterParticle({
-    id: idFactory(),
-    pos: { x, y },
-    radius: 5,
-    velocity: { x: 3, y: 3 },
-  });
-
-  return ball ? (
-    <circle
-      r={ball.radius}
-      cx={ball.pos.x}
-      cy={ball.pos.y}
-      stroke="grey"
-      fill="none"
-    />
-  ) : null;
-};
-
-const Paddle = ({ x, y, width, height }: IPoint & IRect) => {
-  const setEvents = useSetRecoilState(eventList);
-  const [paddle] = useRegisterParticle({
-    id: idFactory(),
-    pos: { x, y },
-    size: { width, height },
-  });
-
-  const updateVelocity = React.useCallback(
-    (x: number) => () => setEvents((events) => [...events]),
-    [setEvents]
-  );
-
-  useGameControls({
-    leftArrow: updateVelocity(-7),
-    rightArrow: updateVelocity(7),
-    keyUp: updateVelocity(0),
-  });
-
-  return paddle ? (
-    <rect {...paddle.pos} {...paddle.size} stroke="grey" fill="none" />
-  ) : null;
-};
 
 const brickCollisionSystem: ISystem = (world) => {
   const particles = world.particles.reduce((prev, particle) => {
@@ -110,53 +27,133 @@ const brickCollisionSystem: ISystem = (world) => {
     );
     return hit ? prev : [...prev, particle];
   }, [] as IParticle[]);
+
   return { ...world, particles };
 };
 
-const Board = ({ children, ...props }: React.PropsWithChildren<IRect>) => {
-  const [particles, setParticles] = useRecoilState(particleList);
+const paddleMovementSystem: ISystem = (world) => {
+  const event = world.events.find((_) => _.type === EventType.movePaddle);
 
-  const gameLoop = updater([
+  const particles = world.particles.map((particle) => {
+    return event && event.particle.id === particle.id
+      ? {
+          ...particle,
+          velocity: event.velocity,
+        }
+      : particle;
+  });
+
+  return { ...world, particles };
+};
+
+const pushPaddleEvent = (eventStore: IEventsStore, paddle?: IParticle) => (
+  x: number
+) => () => {
+  eventStore.push({
+    particle: paddle!,
+    type: EventType.movePaddle,
+    velocity: { x, y: 0 },
+  });
+};
+
+const particleFactory = (): IParticle[] => {
+  const { width, height } = brickSize;
+  const x = 190;
+  const y = 150;
+
+  const bricks = Array.from(Array(rows), (_, row) =>
+    Array.from(Array(cols), (_, col) => ({
+      id: idFactory(),
+      family: "brick",
+      pos: { x: x + width * col, y: y + row * height },
+      size: { width, height },
+    }))
+  ).flat();
+
+  return [
+    {
+      id: idFactory(),
+      family: "ball",
+      pos: { x: 30, y: 100 },
+      radius: 5,
+      velocity: { x: 3, y: 3 },
+    },
+    {
+      id: idFactory(),
+      family: "floor",
+      pos: { x: 0, y: 600 },
+      size: { width: 800, height: 10 },
+    },
+    {
+      id: idFactory(),
+      family: "rightWall",
+      pos: { x: 800, y: 0 },
+      size: { width: 10, height: 600 },
+    },
+    {
+      id: idFactory(),
+      family: "top",
+      pos: { x: 0, y: -10 },
+      size: { width: 800, height: 10 },
+    },
+    {
+      id: idFactory(),
+      family: "leftWall",
+      pos: { x: -10, y: 0 },
+      size: { width: 10, height: 600 },
+    },
+    {
+      id: idFactory(),
+      family: "paddle",
+      pos: { x: 400, y: 500 },
+      size: { width: 60, height: 10 },
+    },
+    ...bricks,
+  ];
+};
+
+const startGame = (ctx: CanvasRenderingContext2D) => {
+  const particles = particleFactory();
+  const eventStore = createEvents();
+  const paddle = particles.find((_) => _.family === "paddle");
+
+  const pushEvent = pushPaddleEvent(eventStore, paddle);
+
+  gameControls({
+    rightArrow: pushEvent(7),
+    leftArrow: pushEvent(-7),
+    keyUp: pushEvent(0),
+  });
+
+  const update = updater([
+    paddleMovementSystem,
     movementSystem,
     collisionSystem,
     brickCollisionSystem,
   ]);
 
-  useAnimationFrame(() => {
-    const newWorld = gameLoop({ particles, events: [] });
-    setParticles(newWorld.particles);
-  });
+  const render = renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]);
 
-  return (
-    <svg
-      {...props}
-      style={{
-        background: "black",
-      }}
-    >
-      {children}
-    </svg>
-  );
+  gameLoop(ctx, update, render, particles, eventStore);
 };
 
 const Bounce = () => {
-  const width = 800;
-  const height = 600;
-  const offset = 10;
-  const gridX = Math.floor(width / 2 - (cols * brickSize.width) / 2);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  React.useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx) startGame(ctx);
+  }, [canvasRef]);
 
   return (
-    <RecoilRoot>
-      <Board width={width} height={height}>
-        <Ball x={50} y={200} />
-        <Wall x={0} y={0} width={width} height={offset} />
-        <Wall x={0} y={height - offset} width={width} height={offset} />
-        <Wall x={0} y={0} width={offset} height={height} />
-        <Wall x={width - offset} y={0} width={offset} height={height} />
-        <Grid x={gridX} y={150} />
-        <Paddle x={450} y={500} width={60} height={20} />
-      </Board>
-    </RecoilRoot>
+    <canvas
+      ref={canvasRef}
+      width={800}
+      height={600}
+      style={{
+        background: "black",
+      }}
+    />
   );
 };
 

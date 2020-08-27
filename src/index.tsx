@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
-import Example from "./examples/PaddlePure";
+import Example from "./examples/Paddle";
 import * as serviceWorker from "./serviceWorker";
 
 ReactDOM.render(
