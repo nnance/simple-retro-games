@@ -10,6 +10,7 @@ import {
   polygonSystem,
   gameControls,
   rotationEventSystem,
+  thrustEventSystem,
 } from "../lib";
 
 const FPS = 60;
@@ -26,6 +27,8 @@ const particleFactory = (): IParticle[] => {
       pos: { x: 200, y: 200 },
       radius: SHIP_SIZE,
       velocity: { x: 0, y: 0 },
+      friction: FRICTION,
+      angle: 0,
       points: [
         [0, -6],
         [-3, 3],
@@ -56,15 +59,26 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
         rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS,
       });
     },
+    upArrow: () => {
+      eventStore.push({
+        particle: ship!,
+        thrust: SHIP_THRUST,
+      });
+    },
     keyUp: () => {
       eventStore.push({
         particle: ship!,
         rotation: 0,
+        thrust: 0,
       });
     },
   });
 
-  const update = updater([movementSystem, rotationEventSystem]);
+  const update = updater([
+    rotationEventSystem,
+    thrustEventSystem,
+    movementSystem,
+  ]);
 
   const render = renderer(ctx, [polygonSystem(ctx)]);
 

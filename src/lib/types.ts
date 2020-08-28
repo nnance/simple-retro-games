@@ -18,6 +18,8 @@ export interface IParticle {
   points?: [number, number][];
   angle?: number;
   rotation?: number;
+  friction?: number;
+  thrust?: number;
 }
 
 export interface IParticleEvent {
@@ -25,6 +27,7 @@ export interface IParticleEvent {
   collider?: IParticle;
   velocity?: IPoint;
   rotation?: number;
+  thrust?: number;
 }
 
 export interface IEventsStore {
