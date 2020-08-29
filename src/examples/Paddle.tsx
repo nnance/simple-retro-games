@@ -5,39 +5,31 @@ import {
   updater,
   movementSystem,
   collisionSystem,
-  ISystem,
   renderer,
   circleSystem,
   gameLoop,
   rectangleSystem,
   gameControls,
-  createEvents,
-  IEventsStore,
   velocityEventSystem,
+  IEventSystem,
+  createEventQueue,
+  eventHandler,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
 const rows = 2;
 const cols = 7;
 
-const brickCollisionSystem: ISystem = (world) => {
-  const particles = world.particles.reduce((prev, particle) => {
-    const hit = world.events.find(
-      (_) => _.particle.id === particle.id && particle.family === "brick"
-    );
-    return hit ? prev : [...prev, particle];
-  }, [] as IParticle[]);
+const brickCollisionSystem: IEventSystem = (event, world) => {
+  if (event.collider && event.particle.family === "brick") {
+    const particles = world.particles.reduce((prev, particle) => {
+      const hit = event.particle.id === particle.id;
+      return hit ? prev : [...prev, particle];
+    }, [] as IParticle[]);
 
-  return { ...world, particles };
-};
-
-const pushPaddleEvent = (eventStore: IEventsStore, paddle?: IParticle) => (
-  x: number
-) => () => {
-  eventStore.push({
-    particle: paddle!,
-    velocity: { x, y: 0 },
-  });
+    return { ...world, particles };
+  }
+  return world;
 };
 
 const particleFactory = (): IParticle[] => {
@@ -98,27 +90,31 @@ const particleFactory = (): IParticle[] => {
 
 const startGame = (ctx: CanvasRenderingContext2D) => {
   const particles = particleFactory();
-  const eventStore = createEvents();
+  const eventQueue = createEventQueue();
   const paddle = particles.find((_) => _.family === "paddle");
 
-  const pushEvent = pushPaddleEvent(eventStore, paddle);
+  const paddleEvent = (x: number) => () => {
+    console.log("publish event");
+    eventQueue.enqueue({
+      particle: paddle!,
+      velocity: { x, y: 0 },
+    });
+  };
 
   gameControls({
-    rightArrow: pushEvent(7),
-    leftArrow: pushEvent(-7),
-    keyUp: pushEvent(0),
+    rightArrow: paddleEvent(7),
+    leftArrow: paddleEvent(-7),
+    keyUp: paddleEvent(0),
   });
 
   const update = updater([
-    velocityEventSystem,
     movementSystem,
     collisionSystem,
-    brickCollisionSystem,
+    eventHandler([velocityEventSystem, brickCollisionSystem]),
+    renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 
-  const render = renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]);
-
-  gameLoop(ctx, update, render, particles, eventStore);
+  gameLoop(update, { particles, events: eventQueue });
 };
 
 const Bricks = () => {

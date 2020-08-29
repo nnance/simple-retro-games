@@ -1,4 +1,4 @@
-import { ISystem, IParticle } from "./types";
+import { ISystem, IParticle, IEventSystem } from "./types";
 
 const FPS = 60;
 
@@ -58,47 +58,49 @@ export const movementSystem: ISystem = (world) => {
   return { ...world, particles };
 };
 
-export const velocityEventSystem: ISystem = (world) => {
-  const event = world.events.find((_) => _.velocity !== undefined);
-
-  const particles = world.particles.map((particle) => {
-    return event && event.particle.id === particle.id
-      ? {
-          ...particle,
-          velocity: event.velocity,
-        }
-      : particle;
-  });
-
-  return { ...world, particles };
+export const velocityEventSystem: IEventSystem = (event, world) => {
+  if (event.velocity) {
+    const particles = world.particles.map((particle) => {
+      return event && event.particle.id === particle.id
+        ? {
+            ...particle,
+            velocity: event.velocity,
+          }
+        : particle;
+    });
+    return { ...world, particles };
+  }
+  return world;
 };
 
-export const rotationEventSystem: ISystem = (world) => {
-  const event = world.events.find((_) => _.rotation !== undefined);
+export const rotationEventSystem: IEventSystem = (event, world) => {
+  if (event.rotation) {
+    const particles = world.particles.map((particle) => {
+      return event && event.particle.id === particle.id
+        ? {
+            ...particle,
+            rotation: event.rotation,
+          }
+        : particle;
+    });
 
-  const particles = world.particles.map((particle) => {
-    return event && event.particle.id === particle.id
-      ? {
-          ...particle,
-          rotation: event.rotation,
-        }
-      : particle;
-  });
-
-  return { ...world, particles };
+    return { ...world, particles };
+  }
+  return world;
 };
 
-export const thrustEventSystem: ISystem = (world) => {
-  const event = world.events.find((_) => _.thrust !== undefined);
+export const thrustEventSystem: IEventSystem = (event, world) => {
+  if (event.thrust) {
+    const particles = world.particles.map((particle) => {
+      return event && event.particle.id === particle.id
+        ? {
+            ...particle,
+            thrust: event.thrust,
+          }
+        : particle;
+    });
 
-  const particles = world.particles.map((particle) => {
-    return event && event.particle.id === particle.id
-      ? {
-          ...particle,
-          thrust: event.thrust,
-        }
-      : particle;
-  });
-
-  return { ...world, particles };
+    return { ...world, particles };
+  }
+  return world;
 };

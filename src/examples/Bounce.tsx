@@ -8,6 +8,7 @@ import {
   renderer,
   gameLoop,
   circleSystem,
+  createEventQueue,
 } from "../lib";
 
 const particleFactory = (): IParticle[] => {
@@ -49,11 +50,15 @@ const Bounce = () => {
     const ctx = canvasRef.current?.getContext("2d");
 
     if (ctx) {
-      const update = updater([movementSystem, collisionSystem]);
-      const render = renderer(ctx, [circleSystem(ctx)]);
+      const update = updater([
+        movementSystem,
+        collisionSystem,
+        renderer(ctx, [circleSystem(ctx)]),
+      ]);
+
       const particles = particleFactory();
 
-      gameLoop(ctx, update, render, particles);
+      gameLoop(update, { particles, events: createEventQueue() });
     }
   }, [canvasRef]);
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { ISystem, IParticle, IWorld, IEventsStore } from "./types";
+import { ISystem, IParticle, IWorld, IEventSystem } from "./types";
 
 const MAX_NUM = 100000;
 
@@ -46,7 +46,7 @@ const checkParticles = (world: IWorld) => (particle: IParticle) => {
             particle.velocity = { ...velocity, x: velocity.x * -1 };
           }
 
-          world.events.push({
+          world.events.enqueue({
             particle: part,
             collider: particle,
           });
@@ -72,38 +72,34 @@ export const updater = (systems: ISystem[]) => (world: IWorld): IWorld => {
   return systems.reduce((prev, system) => system(prev), world);
 };
 
-export const renderer = (ctx: CanvasRenderingContext2D, systems: ISystem[]) => (
-  world: IWorld
-) => {
+export const eventHandler = (systems: IEventSystem[]): ISystem => (world) => {
+  let result = world;
+  while (!world.events.isEmpty()) {
+    const event = world.events.dequeue();
+    result = systems.reduce((prev, system) => system(event!, prev), world);
+  }
+  return result;
+};
+
+export const renderer = (
+  ctx: CanvasRenderingContext2D,
+  systems: ISystem[]
+): ISystem => (world: IWorld) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   systems.forEach((system) => system(world));
   return world;
 };
 
-export const gameLoop = (
-  ctx: CanvasRenderingContext2D,
-  update: ISystem,
-  render: ISystem,
-  particles: IParticle[],
-  eventStore?: IEventsStore
-) => {
+export const gameLoop = (update: ISystem, world: IWorld) => {
   const loop = (world: IWorld) => {
-    const newWorld = update({
-      ...world,
-      events: eventStore ? eventStore.get() : [],
-    });
-
-    if (eventStore) eventStore.reset();
-
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    render(newWorld);
+    const newWorld = update(world);
 
     requestAnimationFrame(() => {
       loop(newWorld);
     });
   };
 
-  loop({ particles, events: [] });
+  loop(world);
 };
 
 export const useAnimationFrame = (updater: () => void) => {

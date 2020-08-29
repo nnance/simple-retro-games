@@ -2,7 +2,6 @@ import React from "react";
 import {
   IParticle,
   idFactory,
-  createEvents,
   updater,
   movementSystem,
   renderer,
@@ -11,6 +10,8 @@ import {
   gameControls,
   rotationEventSystem,
   thrustEventSystem,
+  createEventQueue,
+  eventHandler,
 } from "../lib";
 
 const FPS = 60;
@@ -42,31 +43,31 @@ const particleFactory = (): IParticle[] => {
 
 const startGame = (ctx: CanvasRenderingContext2D) => {
   const particles = particleFactory();
-  const eventStore = createEvents();
+  const events = createEventQueue();
 
   const ship = particles.find((_) => _.family === "ship");
 
   gameControls({
     leftArrow: () => {
-      eventStore.push({
+      events.enqueue({
         particle: ship!,
         rotation: ((TURN_SPEED / 180) * Math.PI) / FPS,
       });
     },
     rightArrow: () => {
-      eventStore.push({
+      events.enqueue({
         particle: ship!,
         rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS,
       });
     },
     upArrow: () => {
-      eventStore.push({
+      events.enqueue({
         particle: ship!,
         thrust: SHIP_THRUST,
       });
     },
     keyUp: () => {
-      eventStore.push({
+      events.enqueue({
         particle: ship!,
         rotation: 0,
         thrust: 0,
@@ -75,14 +76,12 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
   });
 
   const update = updater([
-    rotationEventSystem,
-    thrustEventSystem,
     movementSystem,
+    eventHandler([rotationEventSystem, thrustEventSystem]),
+    renderer(ctx, [polygonSystem(ctx)]),
   ]);
 
-  const render = renderer(ctx, [polygonSystem(ctx)]);
-
-  gameLoop(ctx, update, render, particles, eventStore);
+  gameLoop(update, { particles, events });
 };
 
 const Ship = () => {
