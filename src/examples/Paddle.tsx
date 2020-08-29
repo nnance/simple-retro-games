@@ -94,7 +94,6 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
   const paddle = particles.find((_) => _.family === "paddle");
 
   const paddleEvent = (x: number) => () => {
-    console.log("publish event");
     eventQueue.enqueue({
       particle: paddle!,
       velocity: { x, y: 0 },

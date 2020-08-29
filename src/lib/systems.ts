@@ -59,9 +59,9 @@ export const movementSystem: ISystem = (world) => {
 };
 
 export const velocityEventSystem: IEventSystem = (event, world) => {
-  if (event.velocity) {
+  if (event.velocity !== undefined) {
     const particles = world.particles.map((particle) => {
-      return event && event.particle.id === particle.id
+      return event.particle.id === particle.id
         ? {
             ...particle,
             velocity: event.velocity,
@@ -74,9 +74,9 @@ export const velocityEventSystem: IEventSystem = (event, world) => {
 };
 
 export const rotationEventSystem: IEventSystem = (event, world) => {
-  if (event.rotation) {
+  if (event.rotation !== undefined) {
     const particles = world.particles.map((particle) => {
-      return event && event.particle.id === particle.id
+      return event.particle.id === particle.id
         ? {
             ...particle,
             rotation: event.rotation,
@@ -90,9 +90,9 @@ export const rotationEventSystem: IEventSystem = (event, world) => {
 };
 
 export const thrustEventSystem: IEventSystem = (event, world) => {
-  if (event.thrust) {
+  if (event.thrust !== undefined) {
     const particles = world.particles.map((particle) => {
-      return event && event.particle.id === particle.id
+      return event.particle.id === particle.id
         ? {
             ...particle,
             thrust: event.thrust,

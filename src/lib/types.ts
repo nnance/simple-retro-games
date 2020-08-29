@@ -37,12 +37,6 @@ export interface IEventQueue {
   isEmpty: () => boolean;
 }
 
-export interface IEventsStore {
-  get: () => IParticleEvent[];
-  push: (event: IParticleEvent) => void;
-  reset: () => void;
-}
-
 export interface IWorld {
   particles: IParticle[];
   events: IEventQueue;

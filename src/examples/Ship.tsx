@@ -12,6 +12,7 @@ import {
   thrustEventSystem,
   createEventQueue,
   eventHandler,
+  KeyCode,
 } from "../lib";
 
 const FPS = 60;
@@ -33,7 +34,7 @@ const particleFactory = (): IParticle[] => {
       points: [
         [0, -6],
         [-3, 3],
-        [0, 2],
+        [0, 1],
         [3, 3],
         [0, -6],
       ],
@@ -66,11 +67,13 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
         thrust: SHIP_THRUST,
       });
     },
-    keyUp: () => {
+    keyUp: (keyCode) => {
       events.enqueue({
         particle: ship!,
-        rotation: 0,
-        thrust: 0,
+        rotation: [KeyCode.leftArrow, KeyCode.rightArrow].includes(keyCode || 0)
+          ? 0
+          : ship?.rotation,
+        thrust: keyCode === KeyCode.upArrow ? 0 : ship?.thrust,
       });
     },
   });
