@@ -5,7 +5,7 @@ import {
   useSetRecoilState,
   useRecoilState,
 } from "recoil";
-import { IParticle, IParticleEvent, IEventQueue } from "./types";
+import { IParticle, IParticleEvent } from "./types";
 
 export const particleList = atom<IParticle[]>({
   key: "particleList",
@@ -48,14 +48,3 @@ export const eventSelector = selectorFamily<IParticleEvent | undefined, number>(
     },
   }
 );
-
-export const createEventQueue = (): IEventQueue => {
-  const events: IParticleEvent[] = [];
-
-  return {
-    enqueue: (event: IParticleEvent) => events.push(event),
-    dequeue: () => events.shift(),
-    peek: () => (events.length > 0 ? events[0] : undefined),
-    isEmpty: () => events.length === 0,
-  };
-};

@@ -1,5 +1,14 @@
 import { IWorld, ISystem } from "./types";
 
+export const renderer = (
+  ctx: CanvasRenderingContext2D,
+  systems: ISystem[]
+): ISystem => (world: IWorld) => {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  systems.forEach((system) => system(world));
+  return world;
+};
+
 export const circleSystem = (ctx: CanvasRenderingContext2D): ISystem => (
   world: IWorld
 ) => {
