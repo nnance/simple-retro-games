@@ -5,6 +5,10 @@ const MAX_NUM = 100000;
 
 export const idFactory = () => Math.floor(Math.random() * MAX_NUM);
 
+// get a random number within a range
+export const random = (min: number, max: number) =>
+  Math.random() * (max - min) + min;
+
 export const updater = (systems: ISystem[]) => (world: IWorld): IWorld => {
   return systems.reduce((prev, system) => system(prev), world);
 };

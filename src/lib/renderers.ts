@@ -77,6 +77,7 @@ export const drawPolygon = (
 export const polygonSystem = (ctx: CanvasRenderingContext2D): ISystem => (
   world: IWorld
 ) => {
+  const showBounding = true;
   world.particles.forEach((particle) => {
     if (particle.points) {
       const {
@@ -86,6 +87,12 @@ export const polygonSystem = (ctx: CanvasRenderingContext2D): ISystem => (
         points,
       } = particle;
       drawPolygon(ctx, x, y, radius, angle, points, "grey");
+      if (showBounding) {
+        ctx.strokeStyle = "lime";
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+        ctx.stroke();
+      }
     }
   });
   return world;
