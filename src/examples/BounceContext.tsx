@@ -8,6 +8,8 @@ import {
   collisionSystem,
   useAnimationFrame,
   createEventQueue,
+  eventHandler,
+  bounceEventSystem,
 } from "../lib";
 
 const GameContext = React.createContext<
@@ -21,7 +23,11 @@ const Ball = ({ pos, radius }: IParticle) => {
 const Board = (props: React.PropsWithChildren<IRect>) => {
   const [particles, setParticles] = React.useContext(GameContext);
 
-  const gameLoop = updater([movementSystem, collisionSystem]);
+  const gameLoop = updater([
+    movementSystem,
+    collisionSystem,
+    eventHandler([bounceEventSystem]),
+  ]);
 
   useAnimationFrame(() => {
     const newWorld = gameLoop({ particles, events: createEventQueue() });

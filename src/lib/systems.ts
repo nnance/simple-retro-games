@@ -1,4 +1,4 @@
-import { ISystem, IParticle, IEventSystem, IWorld } from "./types";
+import { ISystem, IParticle, IEventSystem } from "./types";
 
 const FPS = 60;
 
@@ -105,65 +105,100 @@ export const thrustEventSystem: IEventSystem = (event, world) => {
   return world;
 };
 
-const checkParticles = (world: IWorld) => (particle: IParticle) => {
-  if (particle.velocity && particle.radius) {
-    const { pos, velocity, radius } = particle;
+export const bounceEventSystem: IEventSystem = (event, world) => {
+  if (event.collider !== undefined) {
+    const { id, pos, velocity, radius } = event.collider;
 
-    const rect1 = {
-      x: pos.x - radius,
-      y: pos.y - radius,
-      width: radius * 2,
-      height: radius * 2,
-    };
-
-    world.particles.forEach((part) => {
-      if (part.size) {
-        const rect2 = {
-          x: part.pos.x,
-          y: part.pos.y,
-          width: part.size.width,
-          height: part.size.height,
+    const particles = world.particles.map((particle) => {
+      if (
+        id === particle.id &&
+        velocity !== undefined &&
+        radius !== undefined
+      ) {
+        const rect1 = {
+          x: pos.x - radius,
+          y: pos.y - radius,
+          width: radius * 2,
+          height: radius * 2,
         };
 
-        if (
-          part !== particle &&
-          rect1.x < rect2.x + rect2.width &&
-          rect1.x + rect1.width > rect2.x &&
-          rect1.y < rect2.y + rect2.height &&
-          rect1.y + rect1.height > rect2.y
-        ) {
-          if (rect1.y - velocity.y + rect1.height <= rect2.y) {
-            particle.pos = { ...pos, y: rect2.y - radius };
-            particle.velocity = { ...velocity, y: velocity.y * -1 };
-          } else if (rect1.y - velocity.y >= rect2.y + rect2.height) {
-            particle.pos = { ...pos, y: rect2.y + rect2.height + radius };
-            particle.velocity = { ...velocity, y: velocity.y * -1 };
-          } else if (rect1.x - velocity.x + rect1.width <= rect2.x) {
-            particle.pos = { ...pos, x: rect2.x - radius };
-            particle.velocity = { ...velocity, x: velocity.x * -1 };
-          } else {
-            particle.pos = { ...pos, x: rect2.x + rect2.width + radius };
-            particle.velocity = { ...velocity, x: velocity.x * -1 };
-          }
+        const rect2 = {
+          x: event.particle.pos.x,
+          y: event.particle.pos.y,
+          width: event.particle.size?.width || 0,
+          height: event.particle.size?.height || 0,
+        };
 
-          world.events.enqueue({
-            particle: part,
-            collider: particle,
-          });
+        if (rect1.y - velocity.y + rect1.height <= rect2.y) {
+          return {
+            ...particle,
+            pos: { ...pos, y: rect2.y - radius },
+            velocity: { ...velocity, y: velocity.y * -1 },
+          };
+        } else if (rect1.y - velocity.y >= rect2.y + rect2.height) {
+          return {
+            ...particle,
+            pos: { ...pos, y: rect2.y + rect2.height + radius },
+            velocity: { ...velocity, y: velocity.y * -1 },
+          };
+        } else if (rect1.x - velocity.x + rect1.width <= rect2.x) {
+          return {
+            ...particle,
+            pos: { ...pos, x: rect2.x - radius },
+            velocity: { ...velocity, x: velocity.x * -1 },
+          };
+        } else {
+          return {
+            ...particle,
+            pos: { ...pos, x: rect2.x + rect2.width + radius },
+            velocity: { ...velocity, x: velocity.x * -1 },
+          };
         }
-      }
+      } else return particle;
     });
+    return { ...world, particles };
   }
 
-  return { ...particle };
+  return world;
 };
 
 export const collisionSystem: ISystem = (world) => {
-  const bounceChecker = checkParticles(world);
+  world.particles.forEach((particle) => {
+    if (particle.velocity && particle.radius) {
+      const { pos, radius } = particle;
 
-  const particles = world.particles.map((particle) =>
-    particle.velocity ? bounceChecker(particle) : particle
-  );
+      const rect1 = {
+        x: pos.x - radius,
+        y: pos.y - radius,
+        width: radius * 2,
+        height: radius * 2,
+      };
 
-  return { ...world, particles };
+      world.particles.forEach((part) => {
+        if (part.size) {
+          const rect2 = {
+            x: part.pos.x,
+            y: part.pos.y,
+            width: part.size.width,
+            height: part.size.height,
+          };
+
+          if (
+            part !== particle &&
+            rect1.x < rect2.x + rect2.width &&
+            rect1.x + rect1.width > rect2.x &&
+            rect1.y < rect2.y + rect2.height &&
+            rect1.y + rect1.height > rect2.y
+          ) {
+            world.events.enqueue({
+              particle: part,
+              collider: particle,
+            });
+          }
+        }
+      });
+    }
+  });
+
+  return world;
 };

@@ -9,6 +9,8 @@ import {
   gameLoop,
   circleSystem,
   createEventQueue,
+  eventHandler,
+  bounceEventSystem,
 } from "../lib";
 
 const particleFactory = (): IParticle[] => {
@@ -53,6 +55,7 @@ const Bounce = () => {
       const update = updater([
         movementSystem,
         collisionSystem,
+        eventHandler([bounceEventSystem]),
         renderer(ctx, [circleSystem(ctx)]),
       ]);
 

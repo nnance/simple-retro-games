@@ -14,6 +14,7 @@ import {
   IEventSystem,
   createEventQueue,
   eventHandler,
+  bounceEventSystem,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
@@ -106,10 +107,16 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
     keyUp: paddleEvent(0),
   });
 
+  const handlers = [
+    bounceEventSystem,
+    velocityEventSystem,
+    brickCollisionSystem,
+  ];
+
   const update = updater([
     movementSystem,
     collisionSystem,
-    eventHandler([velocityEventSystem, brickCollisionSystem]),
+    eventHandler(handlers),
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 

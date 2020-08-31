@@ -12,6 +12,7 @@ import {
   IEventSystem,
   eventHandler,
   createEventQueue,
+  bounceEventSystem,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
@@ -96,7 +97,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   const gameLoop = updater([
     movementSystem,
     collisionSystem,
-    eventHandler([brickCollisionSystem]),
+    eventHandler([bounceEventSystem, brickCollisionSystem]),
   ]);
 
   useAnimationFrame(() => {
