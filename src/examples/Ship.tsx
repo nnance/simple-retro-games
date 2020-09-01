@@ -17,15 +17,16 @@ import {
   IRect,
   ISystem,
   collisionSystem,
-  IPoint,
 } from "../lib";
 
 const SIZE = { width: 800, height: 600 };
 const FPS = 60;
 const SHOW_BOUNDING = false;
-const SHIP_SIZE = 20;
+const SHIP_SIZE = 12;
+const SHIP_SCALE = 4;
 const ASTEROIDS_NUM = 3;
-const ASTEROIDS_SIZE = [50, 5, 2]; // size in pixel per stage
+const ASTEROIDS_SIZE = [40, 20, 10]; // size in pixel per stage
+const ASTEROIDS_SCALE = [10, 5, 2]; // size in pixel per stage
 const ASTEROIDS_SPEED = 50; // max starting speed in pixels per sec
 const ASTEROIDS_VERT = 10; // avg num of vertices
 const ASTEROID_JAG = 0.3;
@@ -110,7 +111,8 @@ const asteroidFactory = (): IParticle[] => {
     id: idFactory(),
     family: "asteroid",
     pos: { x: random(0, SIZE.width), y: random(0, SIZE.width) },
-    radius: Math.ceil(ASTEROIDS_SIZE[stage - 1] / 2),
+    radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]),
+    scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]),
     velocity: { x: random(-2, 2), y: random(-2, 2) },
     points,
   }));
@@ -141,7 +143,6 @@ const createAsteroid = (
         offset * Math.sin(angle + (j * Math.PI * 2) / vert),
       ] as [number, number]
   );
-  console.dir(points);
 
   return {
     id: idFactory(),
@@ -177,7 +178,8 @@ const particleFactory = (): IParticle[] => {
       id: idFactory(),
       family: "ship",
       pos: { x: 200, y: 200 },
-      radius: SHIP_SIZE / 2,
+      radius: SHIP_SIZE,
+      scale: SHIP_SCALE,
       velocity: { x: 0, y: 0 },
       friction: FRICTION,
       angle: 0,
@@ -255,7 +257,7 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
     collisionSystem,
     offScreenSystem(SIZE),
     eventHandler([rotationEventSystem, thrustEventSystem]),
-    renderer(ctx, [polygonSystem(ctx)]),
+    renderer(ctx, [polygonSystem(ctx, SHOW_BOUNDING)]),
   ]);
 
   gameLoop(update, { particles, events });

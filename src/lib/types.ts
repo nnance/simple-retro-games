@@ -13,6 +13,7 @@ export interface IParticle {
   family?: string;
   pos: IPoint;
   radius?: number;
+  scale?: number;
   size?: IRect;
   velocity?: IPoint;
   points?: [number, number][];
