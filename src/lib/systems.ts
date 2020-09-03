@@ -163,9 +163,9 @@ export const bounceEventSystem: IEventSystem = (event, world) => {
 };
 
 export const collisionSystem: ISystem = (world) => {
-  world.particles.forEach((particle) => {
-    if (particle.velocity && particle.radius) {
-      const { pos, radius } = particle;
+  world.particles.forEach((collider) => {
+    if (collider.velocity && collider.radius) {
+      const { pos, radius } = collider;
 
       const rect1 = {
         x: pos.x - radius,
@@ -174,25 +174,40 @@ export const collisionSystem: ISystem = (world) => {
         height: radius * 2,
       };
 
-      world.particles.forEach((part) => {
-        if (part.size) {
+      world.particles.forEach((particle) => {
+        if (particle.size) {
           const rect2 = {
-            x: part.pos.x,
-            y: part.pos.y,
-            width: part.size.width,
-            height: part.size.height,
+            x: particle.pos.x,
+            y: particle.pos.y,
+            width: particle.size.width,
+            height: particle.size.height,
           };
 
           if (
-            part !== particle &&
+            particle !== collider &&
             rect1.x < rect2.x + rect2.width &&
             rect1.x + rect1.width > rect2.x &&
             rect1.y < rect2.y + rect2.height &&
             rect1.y + rect1.height > rect2.y
           ) {
             world.events.enqueue({
-              particle: part,
-              collider: particle,
+              particle: particle,
+              collider,
+            });
+          }
+        } else if (
+          particle !== collider &&
+          particle.radius &&
+          collider.radius
+        ) {
+          const dx = particle.pos.x - collider.pos.x;
+          const dy = particle.pos.y - collider.pos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < particle.radius + collider.radius) {
+            world.events.enqueue({
+              particle: particle,
+              collider,
             });
           }
         }
