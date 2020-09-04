@@ -20,7 +20,6 @@ import {
   IEventSystem,
 } from "../lib";
 
-const SIZE = { width: 800, height: 600 };
 const FPS = 60;
 const SHOW_BOUNDING = false;
 const SHIP_SIZE = 10;
@@ -102,13 +101,16 @@ const ASTEROIDS = [
   ],
 ] as [number, number][][];
 
-const asteroidFactory = (stage: number): IParticle[] => {
+const asteroidFactory = (
+  stage: number,
+  { width, height }: IRect
+): IParticle[] => {
   const velocity = () => random(ASTEROIDS_SPEED * -1, ASTEROIDS_SPEED);
 
   return ASTEROIDS.map((points) => ({
     id: idFactory(),
     family: "asteroid",
-    pos: { x: random(0, SIZE.width), y: random(0, SIZE.width) },
+    pos: { x: random(0, width), y: random(0, width) },
     radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]),
     scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]),
     velocity: { x: velocity(), y: velocity() },
@@ -116,7 +118,7 @@ const asteroidFactory = (stage: number): IParticle[] => {
   }));
 };
 
-const particleFactory = (): IParticle[] => {
+const particleFactory = (size: IRect): IParticle[] => {
   const ship = {
     id: idFactory(),
     family: "ship",
@@ -135,7 +137,7 @@ const particleFactory = (): IParticle[] => {
     ],
   } as IParticle;
 
-  return [ship, ...asteroidFactory(1)];
+  return [ship, ...asteroidFactory(1, size)];
 };
 
 const offScreenSystem = (size: IRect): ISystem => (world) => {
@@ -175,8 +177,8 @@ const shipCollisionSystem: IEventSystem = (event, world) => {
   return world;
 };
 
-const startGame = (ctx: CanvasRenderingContext2D) => {
-  const particles = particleFactory();
+const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
+  const particles = particleFactory(size);
   const events = createEventQueue();
 
   const ship = particles.find((_) => _.family === "ship");
@@ -218,7 +220,7 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
   const update = updater([
     movementSystem,
     collisionSystem,
-    offScreenSystem(SIZE),
+    offScreenSystem(size),
     eventHandler([rotationEventSystem, thrustEventSystem, shipCollisionSystem]),
     renderer(ctx, [polygonSystem(ctx, SHOW_BOUNDING)]),
   ]);
@@ -226,22 +228,20 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
   gameLoop(update, { particles, events });
 };
 
-const Ship = () => {
+const Ship = (size: IRect) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
 
-    if (ctx) startGame(ctx);
-  }, [canvasRef]);
+    if (ctx) startGame(ctx, size);
+  }, [canvasRef, size]);
 
   return (
     <canvas
       ref={canvasRef}
-      {...SIZE}
-      style={{
-        background: "black",
-      }}
+      style={{ background: "black", width: "100%", height: "100%" }}
+      {...size}
     />
   );
 };
