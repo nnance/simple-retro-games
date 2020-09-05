@@ -1,22 +1,10 @@
-import React from "react";
+import React, { Fragment } from "react";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Navbar from "react-bootstrap/Navbar";
 import Router from "./Router";
-import { BrowserRouter } from "react-router-dom";
-
-const useResize = (): number => {
-  const [height, setHeight] = React.useState(window.innerHeight);
-
-  React.useEffect(() => {
-    const onResize = (): void => setHeight(window.innerHeight);
-    window.addEventListener("resize", onResize);
-    return (): void => window.removeEventListener("onresize", onResize);
-  });
-
-  return height;
-};
+import TitleBar from "./TitleBar";
+import { useResize } from "./lib/hooks";
 
 function GameContainer(props: React.PropsWithChildren<{}>) {
   const colRef = React.useRef<HTMLDivElement>(null);
@@ -33,10 +21,8 @@ function GameContainer(props: React.PropsWithChildren<{}>) {
   }, [colRef, windowHeight]);
 
   return (
-    <BrowserRouter>
-      <Navbar bg="dark" variant="dark" fixed="top">
-        <Navbar.Brand href="#home">React Games</Navbar.Brand>
-      </Navbar>
+    <Fragment>
+      <TitleBar />
       <Container fluid style={{ height: "100vh", paddingTop: "56px" }}>
         <Row style={{ height: "100%" }}>
           <Col></Col>
@@ -54,7 +40,7 @@ function GameContainer(props: React.PropsWithChildren<{}>) {
           <Col></Col>
         </Row>
       </Container>
-    </BrowserRouter>
+    </Fragment>
   );
 }
 
