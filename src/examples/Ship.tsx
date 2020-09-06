@@ -19,6 +19,7 @@ import {
   collisionSystem,
   IEventSystem,
 } from "../lib";
+import { ColSizeContext } from "../Layout";
 
 const FPS = 60;
 const SHOW_BOUNDING = false;
@@ -228,7 +229,8 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   gameLoop(update, { particles, events });
 };
 
-const Ship = (size: IRect) => {
+const Ship = () => {
+  const [size] = React.useContext(ColSizeContext);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {

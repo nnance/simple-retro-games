@@ -1,5 +1,4 @@
 import React from "react";
-import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -8,7 +7,6 @@ import { faPencilAlt, faArrowsAlt } from "@fortawesome/free-solid-svg-icons";
 import { useResize } from "../../lib/hooks";
 import Grid from "./Grid";
 import { Context, StoreProvider, ActionTypes, Point } from "./Store";
-import TitleBar from "../../TitleBar";
 
 const GridCol: React.FC = () => {
   const [size, setSize] = React.useState({ width: 300, height: 300 });
@@ -118,13 +116,8 @@ const ToolsCol: React.FC = () => {
 const App: React.FC = () => {
   return (
     <StoreProvider>
-      <TitleBar />
-      <Container fluid style={{ height: "100vh", paddingTop: "56px" }}>
-        <Row style={{ height: "100%" }}>
-          <GridCol />
-          <ToolsCol />
-        </Row>
-      </Container>
+      <GridCol />
+      <ToolsCol />
     </StoreProvider>
   );
 };

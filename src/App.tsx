@@ -1,13 +1,31 @@
 import React from "react";
-import { IRect } from "./lib";
+import { Switch, Route, BrowserRouter } from "react-router-dom";
+import { ButtonLink, ColumnLayout, Layout } from "./Layout";
+import ToolsRouter from "./tools/Router";
+import { ExamplesRouter } from "./examples/Router";
 
-function App(size: IRect) {
+export function Home() {
   return (
-    <canvas
-      style={{ border: "1px solid #ccc", width: "100%", height: "100%" }}
-      {...size}
-    />
+    <ColumnLayout>
+      <ButtonLink to={"/games"}>Games</ButtonLink>
+      <br />
+      <ButtonLink to={"/examples"}>Examples</ButtonLink>
+      <br />
+      <ButtonLink to={"/tools"}>Tools</ButtonLink>
+    </ColumnLayout>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Layout>
+        <Switch>
+          <Route exact path="/" component={Home} />
+          <Route path="/tools" component={ToolsRouter} />
+          <Route path="/examples" component={ExamplesRouter} />
+        </Switch>
+      </Layout>
+    </BrowserRouter>
+  );
+}
