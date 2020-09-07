@@ -1,5 +1,14 @@
 import { IWorld, ISystem } from "./types";
 
+export const renderer = (
+  ctx: CanvasRenderingContext2D,
+  systems: ISystem[]
+): ISystem => (world: IWorld) => {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  systems.forEach((system) => system(world));
+  return world;
+};
+
 export const circleSystem = (ctx: CanvasRenderingContext2D): ISystem => (
   world: IWorld
 ) => {
@@ -36,6 +45,11 @@ const rotatePolygon = (
   ]);
 };
 
+const scalePolygon = (points: [number, number][], c: number) => {
+  // ordinary vector multiplication
+  return points.map((point) => [point[0] * c, point[1] * c]);
+};
+
 export const drawPolygon = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -43,13 +57,16 @@ export const drawPolygon = (
   radius: number,
   angle: number,
   points: [number, number][],
+  scale = 1,
+  showBounding = false,
   lineColor = "white",
   lineWidth = 1
 ) => {
-  const offsets = rotatePolygon(angle, points);
+  const rotated = rotatePolygon(angle, points);
+  const offsets = scalePolygon(rotated, scale);
 
   ctx.beginPath();
-  ctx.moveTo(x + radius * offsets[0][0], y + radius * offsets[0][1]);
+  ctx.moveTo(x + offsets[0][0], y + offsets[0][1]);
 
   ctx.strokeStyle = lineColor;
   ctx.lineWidth = lineWidth;
@@ -57,26 +74,46 @@ export const drawPolygon = (
   // POLYGON
   offsets.forEach((offset, idx) => {
     if (idx > 0) {
-      ctx.lineTo(x + radius * offset[0], y + radius * offset[1]);
+      ctx.lineTo(x + offset[0], y + offset[1]);
     }
   });
 
   ctx.closePath();
   ctx.stroke();
+
+  if (showBounding) {
+    ctx.strokeStyle = "lime";
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+    ctx.stroke();
+  }
 };
 
-export const polygonSystem = (ctx: CanvasRenderingContext2D): ISystem => (
-  world: IWorld
-) => {
+export const polygonSystem = (
+  ctx: CanvasRenderingContext2D,
+  showBounding: boolean
+): ISystem => (world: IWorld) => {
   world.particles.forEach((particle) => {
     if (particle.points) {
       const {
         pos: { x, y },
         radius = 0,
         angle = 0,
+        scale,
         points,
       } = particle;
-      drawPolygon(ctx, x, y, radius, angle, points, "grey");
+
+      drawPolygon(
+        ctx,
+        x,
+        y,
+        radius,
+        angle,
+        points,
+        scale,
+        showBounding,
+        "grey"
+      );
     }
   });
   return world;

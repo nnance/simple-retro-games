@@ -8,9 +8,14 @@ import {
   renderer,
   gameLoop,
   circleSystem,
+  createEventQueue,
+  eventHandler,
+  bounceEventSystem,
+  IRect,
 } from "../lib";
+import { ColSizeContext } from "../Layout";
 
-const particleFactory = (): IParticle[] => {
+const particleFactory = ({ width, height }: IRect): IParticle[] => {
   return [
     {
       id: idFactory(),
@@ -21,50 +26,53 @@ const particleFactory = (): IParticle[] => {
     },
     {
       id: idFactory(),
-      pos: { x: 0, y: 600 },
-      size: { width: 800, height: 10 },
+      pos: { x: 0, y: height },
+      size: { width: width, height: 10 },
     },
     {
       id: idFactory(),
-      pos: { x: 800, y: 0 },
-      size: { width: 10, height: 600 },
+      pos: { x: width, y: 0 },
+      size: { width: 10, height },
     },
     {
       id: idFactory(),
       pos: { x: 0, y: -10 },
-      size: { width: 800, height: 10 },
+      size: { width, height: 10 },
     },
     {
       id: idFactory(),
       pos: { x: -10, y: 0 },
-      size: { width: 10, height: 600 },
+      size: { width: 10, height },
     },
   ];
 };
 
 const Bounce = () => {
+  const [size] = React.useContext(ColSizeContext);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
 
-    if (ctx) {
-      const update = updater([movementSystem, collisionSystem]);
-      const render = renderer(ctx, [circleSystem(ctx)]);
-      const particles = particleFactory();
+    const particles = particleFactory(size);
 
-      gameLoop(ctx, update, render, particles);
+    if (ctx) {
+      const update = updater([
+        movementSystem,
+        collisionSystem,
+        eventHandler([bounceEventSystem]),
+        renderer(ctx, [circleSystem(ctx)]),
+      ]);
+
+      gameLoop(update, { particles, events: createEventQueue() });
     }
-  }, [canvasRef]);
+  }, [canvasRef, size]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={800}
-      height={600}
-      style={{
-        background: "black",
-      }}
+      style={{ background: "black", width: "100%", height: "100%" }}
+      {...size}
     />
   );
 };

@@ -6,10 +6,10 @@ export type GameControls = {
   upArrow?: () => void;
   rightArrow?: () => void;
   downArrow?: () => void;
-  keyUp?: () => void;
+  keyUp?: (keyCode?: number) => void;
 };
 
-enum KeyCode {
+export enum KeyCode {
   spaceBar = 32,
   leftArrow = 37,
   upArrow = 38,
@@ -30,8 +30,8 @@ export const gameControls = (actions: GameControls): void => {
       actions.spaceBar();
   };
 
-  const upHandler = (): void => {
-    if (actions.keyUp) actions.keyUp();
+  const upHandler = ({ keyCode }: KeyboardEvent): void => {
+    if (actions.keyUp) actions.keyUp(keyCode);
   };
 
   window.addEventListener("keydown", downHandler);

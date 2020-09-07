@@ -13,6 +13,7 @@ export interface IParticle {
   family?: string;
   pos: IPoint;
   radius?: number;
+  scale?: number;
   size?: IRect;
   velocity?: IPoint;
   points?: [number, number][];
@@ -30,17 +31,22 @@ export interface IParticleEvent {
   thrust?: number;
 }
 
-export interface IEventsStore {
-  get: () => IParticleEvent[];
-  push: (event: IParticleEvent) => void;
-  reset: () => void;
+export interface IEventQueue {
+  enqueue: (event: IParticleEvent) => void;
+  dequeue: () => IParticleEvent | undefined;
+  peek: () => IParticleEvent | undefined;
+  isEmpty: () => boolean;
 }
 
 export interface IWorld {
   particles: IParticle[];
-  events: IParticleEvent[];
+  events: IEventQueue;
 }
 
 export interface ISystem {
   (world: IWorld): IWorld;
+}
+
+export interface IEventSystem {
+  (event: IParticleEvent, world: IWorld): IWorld;
 }
