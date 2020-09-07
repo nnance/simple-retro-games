@@ -15,11 +15,13 @@ import {
   createEventQueue,
   eventHandler,
   bounceEventSystem,
+  IRect,
 } from "../lib";
+import { ColSizeContext } from "../Layout";
 
-const brickSize = { width: 60, height: 20 };
-const rows = 2;
-const cols = 7;
+const BRICK_SIZE = { width: 60, height: 20 };
+const ROWS = 2;
+const COLS = 11;
 
 const brickCollisionSystem: IEventSystem = (event, world) => {
   if (event.collider && event.particle.family === "brick") {
@@ -33,19 +35,19 @@ const brickCollisionSystem: IEventSystem = (event, world) => {
   return world;
 };
 
-const particleFactory = (): IParticle[] => {
-  const { width, height } = brickSize;
+const particleFactory = ({ width, height }: IRect): IParticle[] => {
   const x = 190;
   const y = 150;
 
-  const bricks = Array.from(Array(rows), (_, row) =>
-    Array.from(Array(cols), (_, col) => ({
+  const bricks = Array.from(Array(ROWS), (_, row) => {
+    const { width, height } = BRICK_SIZE;
+    return Array.from(Array(COLS), (_, col) => ({
       id: idFactory(),
       family: "brick",
       pos: { x: x + width * col, y: y + row * height },
       size: { width, height },
-    }))
-  ).flat();
+    }));
+  }).flat();
 
   return [
     {
@@ -58,26 +60,26 @@ const particleFactory = (): IParticle[] => {
     {
       id: idFactory(),
       family: "floor",
-      pos: { x: 0, y: 600 },
-      size: { width: 800, height: 10 },
+      pos: { x: 0, y: height },
+      size: { width, height: 10 },
     },
     {
       id: idFactory(),
       family: "rightWall",
-      pos: { x: 800, y: 0 },
-      size: { width: 10, height: 600 },
+      pos: { x: width, y: 0 },
+      size: { width: 10, height },
     },
     {
       id: idFactory(),
       family: "top",
       pos: { x: 0, y: -10 },
-      size: { width: 800, height: 10 },
+      size: { width, height: 10 },
     },
     {
       id: idFactory(),
       family: "leftWall",
       pos: { x: -10, y: 0 },
-      size: { width: 10, height: 600 },
+      size: { width: 10, height },
     },
     {
       id: idFactory(),
@@ -89,8 +91,8 @@ const particleFactory = (): IParticle[] => {
   ];
 };
 
-const startGame = (ctx: CanvasRenderingContext2D) => {
-  const particles = particleFactory();
+const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
+  const particles = particleFactory(size);
   const eventQueue = createEventQueue();
   const paddle = particles.find((_) => _.family === "paddle");
 
@@ -124,21 +126,19 @@ const startGame = (ctx: CanvasRenderingContext2D) => {
 };
 
 const Bricks = () => {
+  const [size] = React.useContext(ColSizeContext);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
-    if (ctx) startGame(ctx);
-  }, [canvasRef]);
+    if (ctx) startGame(ctx, size);
+  }, [canvasRef, size]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={800}
-      height={600}
-      style={{
-        background: "black",
-      }}
+      style={{ background: "black", width: "100%", height: "100%" }}
+      {...size}
     />
   );
 };
