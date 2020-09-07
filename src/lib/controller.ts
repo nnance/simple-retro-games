@@ -6,16 +6,37 @@ export type GameControls = {
   upArrow?: () => void;
   rightArrow?: () => void;
   downArrow?: () => void;
-  keyUp?: () => void;
+  keyUp?: (keyCode?: number) => void;
 };
 
-enum KeyCode {
+export enum KeyCode {
   spaceBar = 32,
   leftArrow = 37,
   upArrow = 38,
   rightArrow = 39,
   downArrow = 40,
 }
+
+export const gameControls = (actions: GameControls): void => {
+  const downHandler = ({ keyCode }: KeyboardEvent): void => {
+    if (keyCode === KeyCode.upArrow && actions.upArrow) actions.upArrow();
+    else if (keyCode === KeyCode.rightArrow && actions.rightArrow)
+      actions.rightArrow();
+    else if (keyCode === KeyCode.leftArrow && actions.leftArrow)
+      actions.leftArrow();
+    else if (keyCode === KeyCode.downArrow && actions.downArrow)
+      actions.downArrow();
+    else if (keyCode === KeyCode.spaceBar && actions.spaceBar)
+      actions.spaceBar();
+  };
+
+  const upHandler = ({ keyCode }: KeyboardEvent): void => {
+    if (actions.keyUp) actions.keyUp(keyCode);
+  };
+
+  window.addEventListener("keydown", downHandler);
+  window.addEventListener("keyup", upHandler);
+};
 
 export const useGameControls = (actions: GameControls): void => {
   const [state, setState] = React.useState(0);

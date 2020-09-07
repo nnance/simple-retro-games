@@ -8,8 +8,11 @@ import {
   collisionSystem,
   useAnimationFrame,
   IPoint,
-  ISystem,
   useGameControls,
+  IEventSystem,
+  eventHandler,
+  createEventQueue,
+  bounceEventSystem,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
@@ -20,14 +23,16 @@ const GameContext = React.createContext<
   [IParticle[], React.Dispatch<React.SetStateAction<IParticle[]>>]
 >([[], () => []]);
 
-const brickCollisionSystem: ISystem = (world) => {
-  const particles = world.particles.reduce((prev, particle) => {
-    const hit = world.events.find(
-      (_) => _.particle.id === particle.id && particle.family === "brick"
-    );
-    return hit ? prev : [...prev, particle];
-  }, [] as IParticle[]);
-  return { ...world, particles };
+const brickCollisionSystem: IEventSystem = (event, world) => {
+  if (event.collider && event.particle.family === "brick") {
+    const particles = world.particles.reduce((prev, particle) => {
+      const hit = event.particle.id === particle.id;
+      return hit ? prev : [...prev, particle];
+    }, [] as IParticle[]);
+
+    return { ...world, particles };
+  }
+  return world;
 };
 
 const Brick = ({ pos, size }: IParticle) => {
@@ -92,11 +97,11 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   const gameLoop = updater([
     movementSystem,
     collisionSystem,
-    brickCollisionSystem,
+    eventHandler([bounceEventSystem, brickCollisionSystem]),
   ]);
 
   useAnimationFrame(() => {
-    const newWorld = gameLoop({ particles, events: [] });
+    const newWorld = gameLoop({ particles, events: createEventQueue() });
     setParticles(newWorld.particles);
   });
 
@@ -170,7 +175,7 @@ const particleFactory = (): IParticle[] => {
   ];
 };
 
-const Bounce = () => {
+const Bricks = () => {
   const particlesState = React.useState(particleFactory);
 
   return (
@@ -180,4 +185,4 @@ const Bounce = () => {
   );
 };
 
-export default Bounce;
+export default Bricks;
