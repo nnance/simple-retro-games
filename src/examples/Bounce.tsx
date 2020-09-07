@@ -1,78 +1,79 @@
 import React from "react";
 import {
-  updater,
-  movementSystem,
-  useAnimationFrame,
-  IPoint,
-  IRect,
+  IParticle,
   idFactory,
-  useRegisterParticle,
-  particleList,
+  movementSystem,
   collisionSystem,
+  updater,
+  renderer,
+  gameLoop,
+  circleSystem,
+  createEventQueue,
+  eventHandler,
+  bounceEventSystem,
+  IRect,
 } from "../lib";
-import { RecoilRoot, useRecoilState } from "recoil";
+import { ColSizeContext } from "../Layout";
 
-const Wall = (props: IPoint & IRect) => {
-  const wall = useRegisterParticle({
-    id: idFactory(),
-    pos: { x: props.x, y: props.y },
-    size: { width: props.width, height: props.height },
-  });
-
-  return wall ? <rect {...props} stroke="grey" fill="none" /> : null;
-};
-
-const Ball = ({ x, y }: IPoint) => {
-  const [ball] = useRegisterParticle({
-    id: idFactory(),
-    pos: { x, y },
-    radius: 20,
-    velocity: { x: 3, y: 3 },
-  });
-
-  return ball ? (
-    <circle
-      r={ball.radius}
-      cx={ball.pos.x}
-      cy={ball.pos.y}
-      stroke="grey"
-      fill="none"
-    />
-  ) : null;
-};
-
-const Board = (props: React.PropsWithChildren<IRect>) => {
-  const [particles, setParticles] = useRecoilState(particleList);
-  const gameLoop = updater([movementSystem, collisionSystem]);
-
-  useAnimationFrame(() => {
-    const updated = gameLoop({ particles, events: [] });
-    setParticles(updated.particles);
-  });
-
-  return (
-    <svg
-      {...props}
-      style={{
-        background: "black",
-      }}
-    >
-      {props.children}
-    </svg>
-  );
+const particleFactory = ({ width, height }: IRect): IParticle[] => {
+  return [
+    {
+      id: idFactory(),
+      family: "ball",
+      pos: { x: 30, y: 30 },
+      radius: 20,
+      velocity: { x: 3, y: 3 },
+    },
+    {
+      id: idFactory(),
+      pos: { x: 0, y: height },
+      size: { width: width, height: 10 },
+    },
+    {
+      id: idFactory(),
+      pos: { x: width, y: 0 },
+      size: { width: 10, height },
+    },
+    {
+      id: idFactory(),
+      pos: { x: 0, y: -10 },
+      size: { width, height: 10 },
+    },
+    {
+      id: idFactory(),
+      pos: { x: -10, y: 0 },
+      size: { width: 10, height },
+    },
+  ];
 };
 
 const Bounce = () => {
+  const [size] = React.useContext(ColSizeContext);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  React.useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+
+    const particles = particleFactory(size);
+
+    if (ctx) {
+      const update = updater([
+        movementSystem,
+        collisionSystem,
+        eventHandler([bounceEventSystem]),
+        renderer(ctx, [circleSystem(ctx)]),
+      ]);
+
+      gameLoop(update, { particles, events: createEventQueue() });
+    }
+  }, [canvasRef, size]);
+
   return (
-    <RecoilRoot>
-      <Board width={800} height={600}>
-        <Ball x={30} y={30} />
-        <Wall x={0} y={0} width={800} height={10} />
-        <Wall x={0} y={590} width={800} height={10} />
-        <Wall x={0} y={0} width={10} height={600} />
-        <Wall x={790} y={0} width={10} height={600} />
-      </Board>
-    </RecoilRoot>
+    <canvas
+      ref={canvasRef}
+      style={{ background: "black", width: "100%", height: "100%" }}
+      {...size}
+    />
   );
 };
 

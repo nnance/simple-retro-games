@@ -13,27 +13,40 @@ export interface IParticle {
   family?: string;
   pos: IPoint;
   radius?: number;
+  scale?: number;
   size?: IRect;
   velocity?: IPoint;
-}
-
-export enum EventType {
-  movePaddle,
-  collision,
+  points?: [number, number][];
+  angle?: number;
+  rotation?: number;
+  friction?: number;
+  thrust?: number;
 }
 
 export interface IParticleEvent {
   particle: IParticle;
-  type: EventType;
   collider?: IParticle;
   velocity?: IPoint;
+  rotation?: number;
+  thrust?: number;
+}
+
+export interface IEventQueue {
+  enqueue: (event: IParticleEvent) => void;
+  dequeue: () => IParticleEvent | undefined;
+  peek: () => IParticleEvent | undefined;
+  isEmpty: () => boolean;
 }
 
 export interface IWorld {
   particles: IParticle[];
-  events: IParticleEvent[];
+  events: IEventQueue;
 }
 
 export interface ISystem {
   (world: IWorld): IWorld;
+}
+
+export interface IEventSystem {
+  (event: IParticleEvent, world: IWorld): IWorld;
 }
