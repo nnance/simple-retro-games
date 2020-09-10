@@ -6,6 +6,7 @@ export type GameControls = {
   upArrow?: () => void;
   rightArrow?: () => void;
   downArrow?: () => void;
+  pause?: () => void;
   keyUp?: (keyCode?: number) => void;
 };
 
@@ -15,6 +16,7 @@ export enum KeyCode {
   upArrow = 38,
   rightArrow = 39,
   downArrow = 40,
+  pause = 80,
 }
 
 export const gameControls = (actions: GameControls): void => {
@@ -28,6 +30,7 @@ export const gameControls = (actions: GameControls): void => {
       actions.downArrow();
     else if (keyCode === KeyCode.spaceBar && actions.spaceBar)
       actions.spaceBar();
+    else if (keyCode === KeyCode.pause && actions.pause) actions.pause();
   };
 
   const upHandler = ({ keyCode }: KeyboardEvent): void => {
@@ -52,6 +55,7 @@ export const useGameControls = (actions: GameControls): void => {
         actions.downArrow();
       else if (keyCode === KeyCode.spaceBar && actions.spaceBar)
         actions.spaceBar();
+      else if (keyCode === KeyCode.pause && actions.pause) actions.pause();
       setState(keyCode);
     },
     [actions]

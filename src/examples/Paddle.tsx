@@ -17,7 +17,8 @@ import {
   bounceEventSystem,
   IRect,
 } from "../lib";
-import { ColSizeContext } from "../Layout";
+import { useColSize } from "../Layout";
+import { GameProvider } from "../lib/state";
 
 const BRICK_SIZE = { width: 60, height: 20 };
 const ROWS = 2;
@@ -122,11 +123,11 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 
-  gameLoop(update, { particles, events: eventQueue });
+  gameLoop(update, { paused: false, particles, events: eventQueue });
 };
 
-const Bricks = () => {
-  const [size] = React.useContext(ColSizeContext);
+const GameBoard = () => {
+  const [size] = useColSize();
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
@@ -140,6 +141,14 @@ const Bricks = () => {
       style={{ background: "black", width: "100%", height: "100%" }}
       {...size}
     />
+  );
+};
+
+const Bricks = () => {
+  return (
+    <GameProvider>
+      <GameBoard />
+    </GameProvider>
   );
 };
 

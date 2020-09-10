@@ -39,6 +39,7 @@ export interface IEventQueue {
 }
 
 export interface IWorld {
+  paused: boolean;
   particles: IParticle[];
   events: IEventQueue;
 }

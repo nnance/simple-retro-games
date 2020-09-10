@@ -11,17 +11,14 @@ import {
   useGameControls,
   IEventSystem,
   eventHandler,
-  createEventQueue,
   bounceEventSystem,
+  GameProvider,
+  useGameContext,
 } from "../lib";
 
 const brickSize = { width: 60, height: 20 };
 const rows = 2;
 const cols = 7;
-
-const GameContext = React.createContext<
-  [IParticle[], React.Dispatch<React.SetStateAction<IParticle[]>>]
->([[], () => []]);
 
 const brickCollisionSystem: IEventSystem = (event, world) => {
   if (event.collider && event.particle.family === "brick") {
@@ -40,7 +37,7 @@ const Brick = ({ pos, size }: IParticle) => {
 };
 
 const Grid = ({ x, y }: IPoint) => {
-  const [particles] = React.useContext(GameContext);
+  const [{ particles }] = useGameContext();
 
   return (
     <Fragment>
@@ -52,7 +49,7 @@ const Grid = ({ x, y }: IPoint) => {
 };
 
 const Ball = () => {
-  const [particles] = React.useContext(GameContext);
+  const [{ particles }] = useGameContext();
   const ball = particles.find((_) => _.family === "ball");
 
   return ball ? (
@@ -67,23 +64,25 @@ const Ball = () => {
 };
 
 const Paddle = () => {
-  const [particles, setParticles] = React.useContext(GameContext);
+  const [{ particles }, setGameState] = useGameContext();
   const paddle = particles.find((_) => _.family === "paddle");
 
   const setVelocity = (x: number) => () => {
-    setParticles((particles) =>
-      particles.map((particle) =>
+    setGameState(({ particles, ...state }) => ({
+      ...state,
+      particles: particles.map((particle) =>
         particle.family === "paddle"
           ? { ...particle, velocity: { x, y: 0 } }
           : particle
-      )
-    );
+      ),
+    }));
   };
 
   useGameControls({
     rightArrow: setVelocity(7),
     leftArrow: setVelocity(-7),
     keyUp: setVelocity(0),
+    pause: () => setGameState((state) => ({ ...state, paused: !state.paused })),
   });
 
   return paddle ? (
@@ -92,18 +91,22 @@ const Paddle = () => {
 };
 
 const Board = (props: React.PropsWithChildren<IRect>) => {
-  const [particles, setParticles] = React.useContext(GameContext);
+  const [gameState, setGameState] = useGameContext();
 
-  const gameLoop = updater([
+  const update = updater([
     movementSystem,
     collisionSystem,
     eventHandler([bounceEventSystem, brickCollisionSystem]),
   ]);
 
-  useAnimationFrame(() => {
-    const newWorld = gameLoop({ particles, events: createEventQueue() });
-    setParticles(newWorld.particles);
-  });
+  const gameLoop = React.useCallback(() => {
+    if (!gameState.paused) {
+      const newWorld = update(gameState);
+      setGameState(newWorld);
+    }
+  }, [gameState, setGameState, update]);
+
+  useAnimationFrame(gameLoop);
 
   return (
     <svg
@@ -176,12 +179,12 @@ const particleFactory = (): IParticle[] => {
 };
 
 const Bricks = () => {
-  const particlesState = React.useState(particleFactory);
+  const state = { particles: particleFactory() };
 
   return (
-    <GameContext.Provider value={particlesState}>
+    <GameProvider {...state}>
       <Board width={800} height={600}></Board>
-    </GameContext.Provider>
+    </GameProvider>
   );
 };
 

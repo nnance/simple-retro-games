@@ -37,9 +37,13 @@ export function Layout(props: React.PropsWithChildren<{}>) {
 
 const DEFAULT_SIZE = { width: 100, height: 100 };
 
-export const ColSizeContext = React.createContext<
+const ColSizeContext = React.createContext<
   [IRect, React.Dispatch<React.SetStateAction<IRect>>]
 >([DEFAULT_SIZE, () => {}]);
+
+export function useColSize() {
+  return React.useContext(ColSizeContext);
+}
 
 export function FullHeightCol({ children }: React.PropsWithChildren<{}>) {
   const colRef = React.useRef<HTMLDivElement>(null);

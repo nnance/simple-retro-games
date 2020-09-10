@@ -13,7 +13,7 @@ import {
   bounceEventSystem,
   IRect,
 } from "../lib";
-import { ColSizeContext } from "../Layout";
+import { useColSize } from "../Layout";
 
 const particleFactory = ({ width, height }: IRect): IParticle[] => {
   return [
@@ -48,7 +48,7 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
 };
 
 const Bounce = () => {
-  const [size] = React.useContext(ColSizeContext);
+  const [size] = useColSize();
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
@@ -64,7 +64,11 @@ const Bounce = () => {
         renderer(ctx, [circleSystem(ctx)]),
       ]);
 
-      gameLoop(update, { particles, events: createEventQueue() });
+      gameLoop(update, {
+        paused: false,
+        particles,
+        events: createEventQueue(),
+      });
     }
   }, [canvasRef, size]);
 
