@@ -49,10 +49,16 @@ export const movementSystem: ISystem = (world) => {
     const velocity = applyFriction(movement);
     const pos = applyVelocity(velocity);
 
-    return {
-      ...pos,
-      angle: state.rotation ? (state.angle || 0) + state.rotation : state.angle,
-    };
+    if (state.rotation && state.angle) {
+      return {
+        ...pos,
+        angle: state.rotation
+          ? (state.angle || 0) + state.rotation
+          : state.angle,
+      };
+    } else {
+      return { ...pos };
+    }
   });
 
   return { ...world, particles };

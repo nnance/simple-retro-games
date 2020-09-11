@@ -27,7 +27,7 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
     {
       id: idFactory(),
       pos: { x: 0, y: height },
-      size: { width: width, height: 10 },
+      size: { width, height: 10 },
     },
     {
       id: idFactory(),

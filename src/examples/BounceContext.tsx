@@ -11,42 +11,59 @@ import {
   bounceEventSystem,
   GameProvider,
   useGameContext,
+  createEventQueue,
 } from "../lib";
 import { useColSize } from "../Layout";
 
-const Ball = ({ pos, radius }: IParticle) => {
-  return <circle r={radius} cx={pos.x} cy={pos.y} stroke="grey" fill="none" />;
+const Ball = () => {
+  const [gameState] = useGameContext();
+
+  if (gameState.particles.length) {
+    const { pos, radius } = gameState.particles[0];
+    return (
+      <circle r={radius} cx={pos.x} cy={pos.y} stroke="grey" fill="none" />
+    );
+  }
+  return null;
 };
 
-const Board = (props: React.PropsWithChildren<IRect>) => {
-  const [gameState, setGameState] = useGameContext();
+const update = updater([
+  movementSystem,
+  collisionSystem,
+  eventHandler([bounceEventSystem]),
+]);
 
-  const update = updater([
-    movementSystem,
-    collisionSystem,
-    eventHandler([bounceEventSystem]),
-  ]);
+const Board = (props: React.PropsWithChildren<IRect>) => {
+  const [, setGameState] = useGameContext();
 
   const gameLoop = React.useCallback(() => {
-    const newWorld = update(gameState);
-    setGameState(newWorld);
-  }, [gameState, setGameState, update]);
+    setGameState((state) => update(state));
+  }, [setGameState]);
+
+  React.useEffect(() => {
+    const { width, height } = props;
+    setGameState({
+      paused: false,
+      particles: particleFactory({ width, height }),
+      events: createEventQueue(),
+    });
+  }, [props, setGameState]);
 
   useAnimationFrame(gameLoop);
 
   return (
     <svg
       {...props}
-      style={{
-        background: "black",
-      }}
+      style={{ background: "black", width: "100%", height: "100%" }}
+      viewBox={`0 0 ${props.width} ${props.height}`}
     >
-      <Ball {...gameState.particles[0]} />
+      <Ball />
     </svg>
   );
 };
 
 const particleFactory = ({ width, height }: IRect): IParticle[] => {
+  console.dir({ width, height });
   return [
     {
       id: idFactory(),
@@ -79,11 +96,10 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
 
 const Bounce = () => {
   const [size] = useColSize();
-  const state = { particles: particleFactory(size) };
 
   return (
-    <GameProvider {...state}>
-      <Board {...size}></Board>
+    <GameProvider>
+      <Board {...size} />
     </GameProvider>
   );
 };

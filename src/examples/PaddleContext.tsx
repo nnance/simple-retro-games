@@ -14,7 +14,9 @@ import {
   bounceEventSystem,
   GameProvider,
   useGameContext,
+  createEventQueue,
 } from "../lib";
+import { useColSize } from "../Layout";
 
 const brickSize = { width: 60, height: 20 };
 const rows = 2;
@@ -41,8 +43,8 @@ const Grid = ({ x, y }: IPoint) => {
 
   return (
     <Fragment>
-      {particles.map((brick) =>
-        brick.family === "brick" ? <Brick {...brick} /> : null
+      {particles.map((brick, idx) =>
+        brick.family === "brick" ? <Brick key={idx} {...brick} /> : null
       )}
     </Fragment>
   );
@@ -90,30 +92,41 @@ const Paddle = () => {
   ) : null;
 };
 
-const Board = (props: React.PropsWithChildren<IRect>) => {
-  const [gameState, setGameState] = useGameContext();
+const update = updater([
+  movementSystem,
+  collisionSystem,
+  eventHandler([bounceEventSystem, brickCollisionSystem]),
+]);
 
-  const update = updater([
-    movementSystem,
-    collisionSystem,
-    eventHandler([bounceEventSystem, brickCollisionSystem]),
-  ]);
+const Board = (props: React.PropsWithChildren<IRect>) => {
+  const [, setGameState] = useGameContext();
 
   const gameLoop = React.useCallback(() => {
-    if (!gameState.paused) {
-      const newWorld = update(gameState);
-      setGameState(newWorld);
-    }
-  }, [gameState, setGameState, update]);
+    setGameState((state) => {
+      return !state.paused ? update(state) : state;
+    });
+  }, [setGameState]);
+
+  React.useEffect(() => {
+    const { width, height } = props;
+    const particles = particleFactory({ width, height });
+
+    console.dir(particles);
+
+    setGameState({
+      paused: false,
+      particles,
+      events: createEventQueue(),
+    });
+  }, [props, setGameState]);
 
   useAnimationFrame(gameLoop);
 
   return (
     <svg
       {...props}
-      style={{
-        background: "black",
-      }}
+      style={{ background: "black", width: "100%", height: "100%" }}
+      viewBox={`0 0 ${props.width} ${props.height}`}
     >
       <Ball />
       <Paddle />
@@ -122,8 +135,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   );
 };
 
-const particleFactory = (): IParticle[] => {
-  const { width, height } = brickSize;
+const particleFactory = ({ width, height }: IRect): IParticle[] => {
   const x = 190;
   const y = 150;
 
@@ -131,8 +143,8 @@ const particleFactory = (): IParticle[] => {
     Array.from(Array(cols), (_, col) => ({
       id: idFactory(),
       family: "brick",
-      pos: { x: x + width * col, y: y + row * height },
-      size: { width, height },
+      pos: { x: x + brickSize.width * col, y: y + row * brickSize.height },
+      size: brickSize,
     }))
   ).flat();
 
@@ -147,26 +159,26 @@ const particleFactory = (): IParticle[] => {
     {
       id: idFactory(),
       family: "floor",
-      pos: { x: 0, y: 600 },
-      size: { width: 800, height: 10 },
+      pos: { x: 0, y: height },
+      size: { width, height: 10 },
     },
     {
       id: idFactory(),
       family: "rightWall",
-      pos: { x: 800, y: 0 },
-      size: { width: 10, height: 600 },
+      pos: { x: width, y: 0 },
+      size: { width: 10, height },
     },
     {
       id: idFactory(),
       family: "top",
       pos: { x: 0, y: -10 },
-      size: { width: 800, height: 10 },
+      size: { width, height: 10 },
     },
     {
       id: idFactory(),
       family: "leftWall",
       pos: { x: -10, y: 0 },
-      size: { width: 10, height: 600 },
+      size: { width: 10, height },
     },
     {
       id: idFactory(),
@@ -179,11 +191,11 @@ const particleFactory = (): IParticle[] => {
 };
 
 const Bricks = () => {
-  const state = { particles: particleFactory() };
+  const [size] = useColSize();
 
   return (
-    <GameProvider {...state}>
-      <Board width={800} height={600}></Board>
+    <GameProvider>
+      <Board {...size} />
     </GameProvider>
   );
 };
