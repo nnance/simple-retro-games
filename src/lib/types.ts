@@ -38,10 +38,18 @@ export interface IEventQueue {
   isEmpty: () => boolean;
 }
 
+export interface ISystemQueue {
+  enqueue: (event: ISystem) => void;
+  dequeue: () => ISystem | undefined;
+  peek: () => ISystem | undefined;
+  isEmpty: () => boolean;
+}
+
 export interface IWorld {
   paused: boolean;
   particles: IParticle[];
   events: IEventQueue;
+  queue?: ISystemQueue;
 }
 
 export interface ISystem {

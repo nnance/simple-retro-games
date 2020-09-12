@@ -10,12 +10,13 @@ import {
   gameLoop,
   rectangleSystem,
   gameControls,
-  velocityEventSystem,
   IEventSystem,
   createEventQueue,
   eventHandler,
   bounceEventSystem,
   IRect,
+  createSystemQueue,
+  queueHandler,
 } from "../lib";
 import { useColSize } from "../Layout";
 import { GameProvider } from "../lib/state";
@@ -85,7 +86,7 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
     {
       id: idFactory(),
       family: "paddle",
-      pos: { x: 400, y: 500 },
+      pos: { x: 400, y: height - 100 },
       size: { width: 60, height: 10 },
     },
     ...bricks,
@@ -95,35 +96,42 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const particles = particleFactory(size);
   const eventQueue = createEventQueue();
-  const paddle = particles.find((_) => _.family === "paddle");
+  const queue = createSystemQueue();
 
   const paddleEvent = (x: number) => () => {
-    eventQueue.enqueue({
-      particle: paddle!,
-      velocity: { x, y: 0 },
+    queue.enqueue((world) => {
+      const particles = world.particles.map((particle) =>
+        particle.family === "paddle"
+          ? { ...particle, velocity: { x, y: 0 } }
+          : particle
+      );
+
+      return { ...world, particles };
     });
+  };
+
+  const pauseEvent = () => {
+    queue.enqueue((world) => ({ ...world, paused: !world.paused }));
   };
 
   gameControls({
     rightArrow: paddleEvent(7),
     leftArrow: paddleEvent(-7),
     keyUp: paddleEvent(0),
+    pause: pauseEvent,
   });
 
-  const handlers = [
-    bounceEventSystem,
-    velocityEventSystem,
-    brickCollisionSystem,
-  ];
+  const handlers = [bounceEventSystem, brickCollisionSystem];
 
   const update = updater([
     movementSystem,
     collisionSystem,
     eventHandler(handlers),
+    queueHandler,
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 
-  gameLoop(update, { paused: false, particles, events: eventQueue });
+  gameLoop(update, { paused: false, particles, queue, events: eventQueue });
 };
 
 const GameBoard = () => {

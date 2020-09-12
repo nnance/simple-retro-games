@@ -10,7 +10,8 @@ export const random = (min: number, max: number) =>
   Math.random() * (max - min) + min;
 
 export const updater = (systems: ISystem[]) => (world: IWorld): IWorld => {
-  return systems.reduce((prev, system) => system(prev), world);
+  const updated = systems.reduce((prev, system) => system(prev), world);
+  return updated.paused ? { ...world, paused: true } : updated;
 };
 
 export const gameLoop = (update: ISystem, world: IWorld) => {

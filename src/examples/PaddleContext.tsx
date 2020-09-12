@@ -70,21 +70,26 @@ const Paddle = () => {
   const paddle = particles.find((_) => _.family === "paddle");
 
   const setVelocity = (x: number) => () => {
-    setGameState(({ particles, ...state }) => ({
-      ...state,
-      particles: particles.map((particle) =>
+    setGameState((world) => {
+      const particles = world.particles.map((particle) =>
         particle.family === "paddle"
           ? { ...particle, velocity: { x, y: 0 } }
           : particle
-      ),
-    }));
+      );
+
+      return { ...world, particles };
+    });
+  };
+
+  const pause = () => {
+    setGameState((state) => ({ ...state, paused: !state.paused }));
   };
 
   useGameControls({
     rightArrow: setVelocity(7),
     leftArrow: setVelocity(-7),
     keyUp: setVelocity(0),
-    pause: () => setGameState((state) => ({ ...state, paused: !state.paused })),
+    pause,
   });
 
   return paddle ? (
