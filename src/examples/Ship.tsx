@@ -8,16 +8,16 @@ import {
   gameLoop,
   polygonSystem,
   gameControls,
-  rotationEventSystem,
-  thrustEventSystem,
   createEventQueue,
-  eventHandler,
   KeyCode,
   random,
   IRect,
   ISystem,
   collisionSystem,
   IEventSystem,
+  CollisionHandler,
+  createSystemQueue,
+  queueHandler,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -102,10 +102,7 @@ const ASTEROIDS = [
   ],
 ] as [number, number][][];
 
-const asteroidFactory = (
-  stage: number,
-  { width, height }: IRect
-): IParticle[] => {
+const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
   const velocity = () => random(ASTEROIDS_SPEED * -1, ASTEROIDS_SPEED);
 
   return ASTEROIDS.map((points) => ({
@@ -181,52 +178,48 @@ const shipCollisionSystem: IEventSystem = (event, world) => {
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const particles = particleFactory(size);
   const events = createEventQueue();
+  const queue = createSystemQueue();
 
-  const ship = particles.find((_) => _.family === "ship");
+  const updateShip = (value: Partial<IParticle>) => () => {
+    queue.enqueue((world) => {
+      const particles = world.particles.map((particle) =>
+        particle.family === "ship"
+          ? {
+              ...particle,
+              ...value,
+            }
+          : particle
+      );
+      return { ...world, particles };
+    });
+  };
 
   gameControls({
-    leftArrow: () => {
-      events.enqueue({
-        particle: ship!,
-        rotation: ((TURN_SPEED / 180) * Math.PI) / FPS,
-      });
-    },
-    rightArrow: () => {
-      events.enqueue({
-        particle: ship!,
-        rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS,
-      });
-    },
-    upArrow: () => {
-      events.enqueue({
-        particle: ship!,
-        thrust: SHIP_THRUST,
-      });
-    },
+    leftArrow: updateShip({ rotation: ((TURN_SPEED / 180) * Math.PI) / FPS }),
+    rightArrow: updateShip({ rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS }),
+    upArrow: updateShip({ thrust: SHIP_THRUST }),
     keyUp: (keyCode = 0) => {
       if ([KeyCode.leftArrow, KeyCode.rightArrow].includes(keyCode)) {
-        events.enqueue({
-          particle: ship!,
-          rotation: 0,
-        });
+        updateShip({ rotation: 0 })();
       } else if (keyCode === KeyCode.upArrow) {
-        events.enqueue({
-          particle: ship!,
-          thrust: 0,
-        });
+        updateShip({ thrust: 0 })();
       }
     },
   });
 
+  const collisionHandler: CollisionHandler = (event) => (world) => {
+    return shipCollisionSystem(event, world);
+  };
+
   const update = updater([
     movementSystem,
-    collisionSystem,
+    collisionSystem(collisionHandler),
+    queueHandler,
     offScreenSystem(size),
-    eventHandler([rotationEventSystem, thrustEventSystem, shipCollisionSystem]),
     renderer(ctx, [polygonSystem(ctx, SHOW_BOUNDING)]),
   ]);
 
-  gameLoop(update, { paused: false, particles, events });
+  gameLoop(update, { paused: false, particles, events, queue });
 };
 
 const Ship = () => {

@@ -10,11 +10,13 @@ import {
   IPoint,
   useGameControls,
   IEventSystem,
-  eventHandler,
   bounceEventSystem,
   GameProvider,
   useGameContext,
   createEventQueue,
+  CollisionHandler,
+  queueHandler,
+  createSystemQueue,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -97,10 +99,15 @@ const Paddle = () => {
   ) : null;
 };
 
+const collisionHandler: CollisionHandler = (event) => (world) => {
+  const bounceUpdate = bounceEventSystem(event, world);
+  return brickCollisionSystem(event, bounceUpdate);
+};
+
 const update = updater([
   movementSystem,
-  collisionSystem,
-  eventHandler([bounceEventSystem, brickCollisionSystem]),
+  collisionSystem(collisionHandler),
+  queueHandler,
 ]);
 
 const Board = (props: React.PropsWithChildren<IRect>) => {
@@ -116,12 +123,11 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
     const { width, height } = props;
     const particles = particleFactory({ width, height });
 
-    console.dir(particles);
-
     setGameState({
       paused: false,
       particles,
       events: createEventQueue(),
+      queue: createSystemQueue(),
     });
   }, [props, setGameState]);
 

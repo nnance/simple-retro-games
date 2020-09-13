@@ -8,10 +8,10 @@ import {
   renderer,
   gameLoop,
   circleSystem,
-  createEventQueue,
-  eventHandler,
-  bounceEventSystem,
   IRect,
+  collisionHandler,
+  createSystemQueue,
+  queueHandler,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -59,15 +59,15 @@ const Bounce = () => {
     if (ctx) {
       const update = updater([
         movementSystem,
-        collisionSystem,
-        eventHandler([bounceEventSystem]),
+        collisionSystem(collisionHandler),
+        queueHandler,
         renderer(ctx, [circleSystem(ctx)]),
       ]);
 
       gameLoop(update, {
         paused: false,
         particles,
-        events: createEventQueue(),
+        queue: createSystemQueue(),
       });
     }
   }, [canvasRef, size]);

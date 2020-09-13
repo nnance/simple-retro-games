@@ -48,7 +48,7 @@ export interface ISystemQueue {
 export interface IWorld {
   paused: boolean;
   particles: IParticle[];
-  events: IEventQueue;
+  events?: IEventQueue;
   queue?: ISystemQueue;
 }
 

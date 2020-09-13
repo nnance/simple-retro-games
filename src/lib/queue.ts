@@ -19,8 +19,8 @@ export const createEventQueue = (): IEventQueue => {
 
 export const eventHandler = (systems: IEventSystem[]): ISystem => (world) => {
   let result = world;
-  while (!world.events.isEmpty()) {
-    const event = world.events.dequeue();
+  while (!world.events!.isEmpty()) {
+    const event = world.events!.dequeue();
     result = event
       ? systems.reduce((prev, system) => system(event, prev), result)
       : world;

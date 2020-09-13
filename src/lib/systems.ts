@@ -49,7 +49,7 @@ export const movementSystem: ISystem = (world) => {
     const velocity = applyFriction(movement);
     const pos = applyVelocity(velocity);
 
-    if (state.rotation && state.angle) {
+    if ("rotation" in state && "angle" in state) {
       return {
         ...pos,
         angle: state.rotation
@@ -168,7 +168,18 @@ export const bounceEventSystem: IEventSystem = (event, world) => {
   return world;
 };
 
-export const collisionSystem: ISystem = (world) => {
+export type CollisionHandler = (event: {
+  particle: IParticle;
+  collider: IParticle;
+}) => ISystem;
+
+export const collisionHandler: CollisionHandler = (event) => (world) => {
+  return bounceEventSystem(event, world);
+};
+
+export const collisionSystem = (handler: CollisionHandler): ISystem => (
+  world
+) => {
   world.particles.forEach((collider) => {
     if (collider.velocity && collider.radius) {
       const { pos, radius } = collider;
@@ -196,10 +207,12 @@ export const collisionSystem: ISystem = (world) => {
             rect1.y < rect2.y + rect2.height &&
             rect1.y + rect1.height > rect2.y
           ) {
-            world.events.enqueue({
-              particle: particle,
-              collider,
-            });
+            world.queue!.enqueue(
+              handler({
+                particle,
+                collider,
+              })
+            );
           }
         } else if (
           particle !== collider &&
@@ -211,10 +224,12 @@ export const collisionSystem: ISystem = (world) => {
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < particle.radius + collider.radius) {
-            world.events.enqueue({
-              particle: particle,
-              collider,
-            });
+            world.queue!.enqueue(
+              handler({
+                particle,
+                collider,
+              })
+            );
           }
         }
       });

@@ -12,11 +12,11 @@ import {
   gameControls,
   IEventSystem,
   createEventQueue,
-  eventHandler,
   bounceEventSystem,
   IRect,
   createSystemQueue,
   queueHandler,
+  CollisionHandler,
 } from "../lib";
 import { useColSize } from "../Layout";
 import { GameProvider } from "../lib/state";
@@ -121,12 +121,14 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     pause: pauseEvent,
   });
 
-  const handlers = [bounceEventSystem, brickCollisionSystem];
+  const collisionHandler: CollisionHandler = (event) => (world) => {
+    const bounceUpdate = bounceEventSystem(event, world);
+    return brickCollisionSystem(event, bounceUpdate);
+  };
 
   const update = updater([
     movementSystem,
-    collisionSystem,
-    eventHandler(handlers),
+    collisionSystem(collisionHandler),
     queueHandler,
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);

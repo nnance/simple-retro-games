@@ -7,11 +7,11 @@ import {
   movementSystem,
   collisionSystem,
   useAnimationFrame,
-  eventHandler,
-  bounceEventSystem,
   GameProvider,
   useGameContext,
-  createEventQueue,
+  collisionHandler,
+  createSystemQueue,
+  queueHandler,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -29,8 +29,8 @@ const Ball = () => {
 
 const update = updater([
   movementSystem,
-  collisionSystem,
-  eventHandler([bounceEventSystem]),
+  collisionSystem(collisionHandler),
+  queueHandler,
 ]);
 
 const Board = (props: React.PropsWithChildren<IRect>) => {
@@ -45,7 +45,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
     setGameState({
       paused: false,
       particles: particleFactory({ width, height }),
-      events: createEventQueue(),
+      queue: createSystemQueue(),
     });
   }, [props, setGameState]);
 
