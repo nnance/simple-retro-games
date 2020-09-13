@@ -114,7 +114,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     queue.enqueue((world) => ({ ...world, paused: !world.paused }));
   };
 
-  gameControls({
+  const cancelControls = gameControls({
     rightArrow: paddleEvent(7),
     leftArrow: paddleEvent(-7),
     keyUp: paddleEvent(0),
@@ -133,7 +133,12 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 
-  gameLoop(update, worldFactor({ particles, queue }));
+  const cancelLoop = gameLoop(update, worldFactor({ particles, queue }));
+
+  return () => {
+    cancelControls();
+    cancelLoop();
+  };
 };
 
 const GameBoard = () => {
@@ -142,7 +147,9 @@ const GameBoard = () => {
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
-    if (ctx) startGame(ctx, size);
+    if (ctx) {
+      return startGame(ctx, size);
+    }
   }, [canvasRef, size]);
 
   return (

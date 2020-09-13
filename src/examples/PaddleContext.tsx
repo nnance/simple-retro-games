@@ -67,11 +67,11 @@ const Ball = () => {
 };
 
 const Paddle = () => {
-  const [{ particles }, setGameState] = useGameContext();
+  const [{ particles, queue }] = useGameContext();
   const paddle = particles.find((_) => _.family === "paddle");
 
-  const setVelocity = (x: number) => () => {
-    setGameState((world) => {
+  const paddleEvent = (x: number) => () => {
+    queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
         particle.family === "paddle"
           ? { ...particle, velocity: { x, y: 0 } }
@@ -82,15 +82,15 @@ const Paddle = () => {
     });
   };
 
-  const pause = () => {
-    setGameState((state) => ({ ...state, paused: !state.paused }));
+  const pauseEvent = () => {
+    queue.enqueue((world) => ({ ...world, paused: !world.paused }));
   };
 
   useGameControls({
-    rightArrow: setVelocity(7),
-    leftArrow: setVelocity(-7),
-    keyUp: setVelocity(0),
-    pause,
+    rightArrow: paddleEvent(7),
+    leftArrow: paddleEvent(-7),
+    keyUp: paddleEvent(0),
+    pause: pauseEvent,
   });
 
   return paddle ? (

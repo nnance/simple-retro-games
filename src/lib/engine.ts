@@ -23,15 +23,18 @@ export const updater = (systems: ISystem[]) => (world: IWorld): IWorld => {
 };
 
 export const gameLoop = (update: ISystem, world: IWorld) => {
+  let stopFrame: number;
+
   const loop = (world: IWorld) => {
     const newWorld = update(world);
 
-    requestAnimationFrame(() => {
+    stopFrame = requestAnimationFrame(() => {
       loop(newWorld);
     });
   };
 
   loop(world);
+  return () => cancelAnimationFrame(stopFrame);
 };
 
 export const useAnimationFrame = (updater: () => void) => {

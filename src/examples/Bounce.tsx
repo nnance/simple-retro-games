@@ -64,7 +64,7 @@ const Bounce = () => {
         renderer(ctx, [circleSystem(ctx)]),
       ]);
 
-      gameLoop(
+      return gameLoop(
         update,
         worldFactor({
           particles,

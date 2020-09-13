@@ -19,8 +19,9 @@ export enum KeyCode {
   pause = 80,
 }
 
-export const gameControls = (actions: GameControls): void => {
+export const gameControls = (actions: GameControls) => {
   const downHandler = ({ keyCode }: KeyboardEvent): void => {
+    console.log("down handler");
     if (keyCode === KeyCode.upArrow && actions.upArrow) actions.upArrow();
     else if (keyCode === KeyCode.rightArrow && actions.rightArrow)
       actions.rightArrow();
@@ -39,6 +40,11 @@ export const gameControls = (actions: GameControls): void => {
 
   window.addEventListener("keydown", downHandler);
   window.addEventListener("keyup", upHandler);
+
+  return () => {
+    window.removeEventListener("keydown", downHandler);
+    window.removeEventListener("keyup", upHandler);
+  };
 };
 
 export const useGameControls = (actions: GameControls): void => {
