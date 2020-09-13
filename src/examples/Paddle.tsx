@@ -10,13 +10,14 @@ import {
   gameLoop,
   rectangleSystem,
   gameControls,
-  IEventSystem,
-  createEventQueue,
   bounceEventSystem,
   IRect,
   createSystemQueue,
   queueHandler,
   CollisionHandler,
+  IBounceEvent,
+  ISystem,
+  worldFactor,
 } from "../lib";
 import { useColSize } from "../Layout";
 import { GameProvider } from "../lib/state";
@@ -25,7 +26,7 @@ const BRICK_SIZE = { width: 60, height: 20 };
 const ROWS = 2;
 const COLS = 11;
 
-const brickCollisionSystem: IEventSystem = (event, world) => {
+const brickCollisionSystem = (event: IBounceEvent): ISystem => (world) => {
   if (event.collider && event.particle.family === "brick") {
     const particles = world.particles.reduce((prev, particle) => {
       const hit = event.particle.id === particle.id;
@@ -95,7 +96,6 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
 
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const particles = particleFactory(size);
-  const eventQueue = createEventQueue();
   const queue = createSystemQueue();
 
   const paddleEvent = (x: number) => () => {
@@ -122,8 +122,8 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
-    const bounceUpdate = bounceEventSystem(event, world);
-    return brickCollisionSystem(event, bounceUpdate);
+    const bounceUpdate = bounceEventSystem(event)(world);
+    return brickCollisionSystem(event)(bounceUpdate);
   };
 
   const update = updater([
@@ -133,7 +133,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 
-  gameLoop(update, { paused: false, particles, queue, events: eventQueue });
+  gameLoop(update, worldFactor({ particles, queue }));
 };
 
 const GameBoard = () => {

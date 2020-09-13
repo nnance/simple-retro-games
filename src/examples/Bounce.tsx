@@ -10,8 +10,8 @@ import {
   circleSystem,
   IRect,
   collisionHandler,
-  createSystemQueue,
   queueHandler,
+  worldFactor,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -64,11 +64,12 @@ const Bounce = () => {
         renderer(ctx, [circleSystem(ctx)]),
       ]);
 
-      gameLoop(update, {
-        paused: false,
-        particles,
-        queue: createSystemQueue(),
-      });
+      gameLoop(
+        update,
+        worldFactor({
+          particles,
+        })
+      );
     }
   }, [canvasRef, size]);
 

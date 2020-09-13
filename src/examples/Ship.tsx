@@ -8,16 +8,16 @@ import {
   gameLoop,
   polygonSystem,
   gameControls,
-  createEventQueue,
   KeyCode,
   random,
   IRect,
   ISystem,
   collisionSystem,
-  IEventSystem,
   CollisionHandler,
   createSystemQueue,
   queueHandler,
+  ICollisionEvent,
+  worldFactor,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -159,7 +159,7 @@ const offScreenSystem = (size: IRect): ISystem => (world) => {
   return { ...world, particles };
 };
 
-const shipCollisionSystem: IEventSystem = (event, world) => {
+const shipCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
   if (
     event.collider &&
     event.collider.family === "asteroid" &&
@@ -177,7 +177,6 @@ const shipCollisionSystem: IEventSystem = (event, world) => {
 
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const particles = particleFactory(size);
-  const events = createEventQueue();
   const queue = createSystemQueue();
 
   const updateShip = (value: Partial<IParticle>) => () => {
@@ -208,7 +207,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
-    return shipCollisionSystem(event, world);
+    return shipCollisionSystem(event)(world);
   };
 
   const update = updater([
@@ -219,7 +218,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [polygonSystem(ctx, SHOW_BOUNDING)]),
   ]);
 
-  gameLoop(update, { paused: false, particles, events, queue });
+  gameLoop(update, worldFactor({ particles, queue }));
 };
 
 const Ship = () => {

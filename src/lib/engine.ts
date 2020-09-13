@@ -1,9 +1,17 @@
 import React from "react";
 import { ISystem, IWorld } from "./types";
+import { createSystemQueue } from "./queue";
 
 const MAX_NUM = 100000;
 
 export const idFactory = () => Math.floor(Math.random() * MAX_NUM);
+
+export const worldFactor = (world: Partial<IWorld>) => ({
+  paused: false,
+  particles: [],
+  queue: createSystemQueue(),
+  ...world,
+});
 
 // get a random number within a range
 export const random = (min: number, max: number) =>

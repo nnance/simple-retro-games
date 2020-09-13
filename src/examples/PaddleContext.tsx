@@ -7,16 +7,15 @@ import {
   movementSystem,
   collisionSystem,
   useAnimationFrame,
-  IPoint,
   useGameControls,
-  IEventSystem,
   bounceEventSystem,
   GameProvider,
   useGameContext,
-  createEventQueue,
   CollisionHandler,
   queueHandler,
-  createSystemQueue,
+  worldFactor,
+  ICollisionEvent,
+  ISystem,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -24,7 +23,7 @@ const brickSize = { width: 60, height: 20 };
 const rows = 2;
 const cols = 7;
 
-const brickCollisionSystem: IEventSystem = (event, world) => {
+const brickCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
   if (event.collider && event.particle.family === "brick") {
     const particles = world.particles.reduce((prev, particle) => {
       const hit = event.particle.id === particle.id;
@@ -40,7 +39,7 @@ const Brick = ({ pos, size }: IParticle) => {
   return <rect {...pos} {...size} stroke="grey" fill="none" />;
 };
 
-const Grid = ({ x, y }: IPoint) => {
+const Grid = () => {
   const [{ particles }] = useGameContext();
 
   return (
@@ -100,8 +99,8 @@ const Paddle = () => {
 };
 
 const collisionHandler: CollisionHandler = (event) => (world) => {
-  const bounceUpdate = bounceEventSystem(event, world);
-  return brickCollisionSystem(event, bounceUpdate);
+  const bounceUpdate = bounceEventSystem(event)(world);
+  return brickCollisionSystem(event)(bounceUpdate);
 };
 
 const update = updater([
@@ -123,12 +122,11 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
     const { width, height } = props;
     const particles = particleFactory({ width, height });
 
-    setGameState({
-      paused: false,
-      particles,
-      events: createEventQueue(),
-      queue: createSystemQueue(),
-    });
+    setGameState(
+      worldFactor({
+        particles,
+      })
+    );
   }, [props, setGameState]);
 
   useAnimationFrame(gameLoop);
@@ -141,7 +139,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
     >
       <Ball />
       <Paddle />
-      <Grid x={190} y={150} />
+      <Grid />
     </svg>
   );
 };

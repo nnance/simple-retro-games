@@ -23,21 +23,6 @@ export interface IParticle {
   thrust?: number;
 }
 
-export interface IParticleEvent {
-  particle: IParticle;
-  collider?: IParticle;
-  velocity?: IPoint;
-  rotation?: number;
-  thrust?: number;
-}
-
-export interface IEventQueue {
-  enqueue: (event: IParticleEvent) => void;
-  dequeue: () => IParticleEvent | undefined;
-  peek: () => IParticleEvent | undefined;
-  isEmpty: () => boolean;
-}
-
 export interface ISystemQueue {
   enqueue: (event: ISystem) => void;
   dequeue: () => ISystem | undefined;
@@ -48,14 +33,9 @@ export interface ISystemQueue {
 export interface IWorld {
   paused: boolean;
   particles: IParticle[];
-  events?: IEventQueue;
-  queue?: ISystemQueue;
+  queue: ISystemQueue;
 }
 
 export interface ISystem {
   (world: IWorld): IWorld;
-}
-
-export interface IEventSystem {
-  (event: IParticleEvent, world: IWorld): IWorld;
 }

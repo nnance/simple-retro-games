@@ -1,4 +1,4 @@
-import { ISystem, IParticle, IEventSystem } from "./types";
+import { ISystem, IParticle } from "./types";
 
 const FPS = 60;
 
@@ -49,7 +49,7 @@ export const movementSystem: ISystem = (world) => {
     const velocity = applyFriction(movement);
     const pos = applyVelocity(velocity);
 
-    if ("rotation" in state && "angle" in state) {
+    if (state.rotation !== undefined && state.angle !== undefined) {
       return {
         ...pos,
         angle: state.rotation
@@ -64,54 +64,12 @@ export const movementSystem: ISystem = (world) => {
   return { ...world, particles };
 };
 
-export const velocityEventSystem: IEventSystem = (event, world) => {
-  if (event.velocity !== undefined) {
-    const particles = world.particles.map((particle) => {
-      return event.particle.id === particle.id
-        ? {
-            ...particle,
-            velocity: event.velocity,
-          }
-        : particle;
-    });
-    return { ...world, particles };
-  }
-  return world;
-};
+export interface IBounceEvent {
+  particle: IParticle;
+  collider: IParticle;
+}
 
-export const rotationEventSystem: IEventSystem = (event, world) => {
-  if (event.rotation !== undefined) {
-    const particles = world.particles.map((particle) => {
-      return event.particle.id === particle.id
-        ? {
-            ...particle,
-            rotation: event.rotation,
-          }
-        : particle;
-    });
-
-    return { ...world, particles };
-  }
-  return world;
-};
-
-export const thrustEventSystem: IEventSystem = (event, world) => {
-  if (event.thrust !== undefined) {
-    const particles = world.particles.map((particle) => {
-      return event.particle.id === particle.id
-        ? {
-            ...particle,
-            thrust: event.thrust,
-          }
-        : particle;
-    });
-
-    return { ...world, particles };
-  }
-  return world;
-};
-
-export const bounceEventSystem: IEventSystem = (event, world) => {
+export const bounceEventSystem = (event: IBounceEvent): ISystem => (world) => {
   if (event.collider !== undefined) {
     const { id, pos, velocity, radius } = event.collider;
 
@@ -168,13 +126,15 @@ export const bounceEventSystem: IEventSystem = (event, world) => {
   return world;
 };
 
-export type CollisionHandler = (event: {
+export interface ICollisionEvent {
   particle: IParticle;
   collider: IParticle;
-}) => ISystem;
+}
+
+export type CollisionHandler = (event: ICollisionEvent) => ISystem;
 
 export const collisionHandler: CollisionHandler = (event) => (world) => {
-  return bounceEventSystem(event, world);
+  return bounceEventSystem(event)(world);
 };
 
 export const collisionSystem = (handler: CollisionHandler): ISystem => (

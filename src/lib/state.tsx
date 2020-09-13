@@ -1,12 +1,8 @@
 import React from "react";
 import { IWorld } from "./types";
-import { createEventQueue } from "./queue";
+import { worldFactor } from "./engine";
 
-const defaultWorld: IWorld = {
-  paused: false,
-  particles: [],
-  events: createEventQueue(),
-};
+const defaultWorld = worldFactor({});
 
 const GameContext = React.createContext<
   [IWorld, React.Dispatch<React.SetStateAction<IWorld>>]

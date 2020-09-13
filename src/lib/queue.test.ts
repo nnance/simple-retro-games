@@ -1,69 +1,86 @@
-import { createEventQueue, eventHandler } from "./queue";
-import { idFactory } from "./engine";
-import { IEventSystem } from "./types";
+import { createSystemQueue, queueHandler } from "./queue";
+import { idFactory, worldFactor } from "./engine";
+import { ISystem } from "./types";
 
-const firstEvent = {
-  particle: {
-    id: idFactory(),
-    family: "event1",
-    pos: { x: 0, y: 0 },
-  },
-};
+const world = worldFactor({
+  particles: [
+    {
+      id: idFactory(),
+      family: "ball1",
+      pos: { x: 10, y: 10 },
+    },
+    {
+      id: idFactory(),
+      family: "ball2",
+      pos: { x: 20, y: 20 },
+    },
+  ],
+});
 
-const secondEvent = {
-  particle: {
-    id: idFactory(),
-    family: "event2",
-    pos: { x: 0, y: 0 },
-  },
-};
+const firstEvent: ISystem = (world) => ({
+  ...world,
+  particles: world.particles.map((particle) =>
+    particle.family === "ball1"
+      ? {
+          ...particle,
+          pos: { x: 0, y: 0 },
+        }
+      : particle
+  ),
+});
+
+const secondEvent: ISystem = (world) => ({
+  ...world,
+  particles: world.particles.map((particle) =>
+    particle.family === "ball2"
+      ? {
+          ...particle,
+          pos: { x: 0, y: 0 },
+        }
+      : particle
+  ),
+});
 
 test("adding event to queue", () => {
-  const events = createEventQueue();
+  const events = createSystemQueue();
   events.enqueue(firstEvent);
   expect(events.isEmpty()).toBeFalsy();
 });
 
 test("removing event to queue", () => {
-  const events = createEventQueue();
+  const events = createSystemQueue();
   events.enqueue(firstEvent);
   events.dequeue();
   expect(events.isEmpty()).toBeTruthy();
 });
 
 test("first in first out", () => {
-  const events = createEventQueue();
+  const events = createSystemQueue();
   events.enqueue(firstEvent);
   events.enqueue(secondEvent);
   const event = events.dequeue();
-  expect(event?.particle.family).toEqual("event1");
+  const newWorld = event!(world);
+  const ball = newWorld.particles.find((_) => _.family === "ball1");
+  expect(ball?.pos.x).toEqual(0);
 });
 
 test("dequeue empties queue", () => {
-  const events = createEventQueue();
+  const events = createSystemQueue();
   events.enqueue(firstEvent);
   events.enqueue(secondEvent);
   events.dequeue();
-  const event = events.dequeue();
-  expect(event?.particle.family).toEqual("event2");
+  events.dequeue();
   expect(events.isEmpty()).toBeTruthy();
 });
 
-test("eventHandler calls each system for events", () => {
-  let eventFamily;
-  const events = createEventQueue();
+test("queueHandler calls each system for events", () => {
+  world.queue.enqueue(firstEvent);
+  world.queue.enqueue(secondEvent);
 
-  events.enqueue(firstEvent);
-  events.enqueue(secondEvent);
+  const newWorld = queueHandler(world);
 
-  const system: IEventSystem = (event, world) => {
-    eventFamily = event.particle.family;
-    return world;
-  };
+  expect(world.queue.isEmpty()).toBeTruthy();
 
-  const handler = eventHandler([system]);
-  handler({ particles: [], events });
-
-  expect(events.isEmpty()).toBeTruthy();
-  expect(eventFamily).toEqual("event2");
+  const ball = newWorld.particles.find((_) => _.family === "ball1");
+  expect(ball?.pos.x).toEqual(0);
 });

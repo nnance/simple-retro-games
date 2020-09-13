@@ -10,8 +10,8 @@ import {
   GameProvider,
   useGameContext,
   collisionHandler,
-  createSystemQueue,
   queueHandler,
+  worldFactor,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -42,11 +42,11 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
 
   React.useEffect(() => {
     const { width, height } = props;
-    setGameState({
-      paused: false,
-      particles: particleFactory({ width, height }),
-      queue: createSystemQueue(),
-    });
+    setGameState(
+      worldFactor({
+        particles: particleFactory({ width, height }),
+      })
+    );
   }, [props, setGameState]);
 
   useAnimationFrame(gameLoop);
