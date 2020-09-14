@@ -204,6 +204,8 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
         updateShip({ thrust: 0 })();
       }
     },
+    pause: () =>
+      queue.enqueue((world) => ({ ...world, paused: !world.paused })),
   });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
@@ -218,7 +220,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [polygonSystem(ctx, SHOW_BOUNDING)]),
   ]);
 
-  gameLoop(update, worldFactor({ particles, queue }));
+  gameLoop(update, worldFactor({ paused: true, particles, queue }));
 };
 
 const Ship = () => {

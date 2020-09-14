@@ -82,15 +82,12 @@ const Paddle = () => {
     });
   };
 
-  const pauseEvent = () => {
-    queue.enqueue((world) => ({ ...world, paused: !world.paused }));
-  };
-
   useGameControls({
     rightArrow: paddleEvent(7),
     leftArrow: paddleEvent(-7),
     keyUp: paddleEvent(0),
-    pause: pauseEvent,
+    pause: () =>
+      queue.enqueue((world) => ({ ...world, paused: !world.paused })),
   });
 
   return paddle ? (
@@ -114,7 +111,8 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
 
   const gameLoop = React.useCallback(() => {
     setGameState((state) => {
-      return !state.paused ? update(state) : state;
+      const updated = update(state);
+      return updated.paused ? { ...state, paused: true } : updated;
     });
   }, [setGameState]);
 
@@ -124,6 +122,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
 
     setGameState(
       worldFactor({
+        paused: true,
         particles,
       })
     );

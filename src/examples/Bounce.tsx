@@ -12,6 +12,8 @@ import {
   collisionHandler,
   queueHandler,
   worldFactor,
+  gameControls,
+  createSystemQueue,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -47,29 +49,45 @@ const particleFactory = ({ width, height }: IRect): IParticle[] => {
   ];
 };
 
+const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
+  const particles = particleFactory(size);
+  const queue = createSystemQueue();
+
+  const update = updater([
+    movementSystem,
+    collisionSystem(collisionHandler),
+    queueHandler,
+    renderer(ctx, [circleSystem(ctx)]),
+  ]);
+
+  const cancelControls = gameControls({
+    pause: () =>
+      queue.enqueue((world) => ({ ...world, paused: !world.paused })),
+  });
+
+  const cancelLoop = gameLoop(
+    update,
+    worldFactor({
+      paused: true,
+      particles,
+      queue,
+    })
+  );
+
+  return () => {
+    cancelLoop();
+    cancelControls();
+  };
+};
+
 const Bounce = () => {
   const [size] = useColSize();
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   React.useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
-
-    const particles = particleFactory(size);
-
     if (ctx) {
-      const update = updater([
-        movementSystem,
-        collisionSystem(collisionHandler),
-        queueHandler,
-        renderer(ctx, [circleSystem(ctx)]),
-      ]);
-
-      return gameLoop(
-        update,
-        worldFactor({
-          particles,
-        })
-      );
+      return startGame(ctx, size);
     }
   }, [canvasRef, size]);
 

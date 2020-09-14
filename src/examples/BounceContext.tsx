@@ -12,6 +12,7 @@ import {
   collisionHandler,
   queueHandler,
   worldFactor,
+  useGameControls,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -34,16 +35,25 @@ const update = updater([
 ]);
 
 const Board = (props: React.PropsWithChildren<IRect>) => {
-  const [, setGameState] = useGameContext();
+  const [{ queue }, setGameState] = useGameContext();
 
   const gameLoop = React.useCallback(() => {
-    setGameState((state) => update(state));
+    setGameState((state) => {
+      const updated = update(state);
+      return updated.paused ? { ...state, paused: true } : updated;
+    });
   }, [setGameState]);
+
+  useGameControls({
+    pause: () =>
+      queue.enqueue((world) => ({ ...world, paused: !world.paused })),
+  });
 
   React.useEffect(() => {
     const { width, height } = props;
     setGameState(
       worldFactor({
+        paused: true,
         particles: particleFactory({ width, height }),
       })
     );
@@ -63,7 +73,6 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
 };
 
 const particleFactory = ({ width, height }: IRect): IParticle[] => {
-  console.dir({ width, height });
   return [
     {
       id: idFactory(),

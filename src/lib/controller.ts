@@ -21,7 +21,6 @@ export enum KeyCode {
 
 export const gameControls = (actions: GameControls) => {
   const downHandler = ({ keyCode }: KeyboardEvent): void => {
-    console.log("down handler");
     if (keyCode === KeyCode.upArrow && actions.upArrow) actions.upArrow();
     else if (keyCode === KeyCode.rightArrow && actions.rightArrow)
       actions.rightArrow();

@@ -110,15 +110,12 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     });
   };
 
-  const pauseEvent = () => {
-    queue.enqueue((world) => ({ ...world, paused: !world.paused }));
-  };
-
   const cancelControls = gameControls({
     rightArrow: paddleEvent(7),
     leftArrow: paddleEvent(-7),
     keyUp: paddleEvent(0),
-    pause: pauseEvent,
+    pause: () =>
+      queue.enqueue((world) => ({ ...world, paused: !world.paused })),
   });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
@@ -133,7 +130,10 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
   ]);
 
-  const cancelLoop = gameLoop(update, worldFactor({ particles, queue }));
+  const cancelLoop = gameLoop(
+    update,
+    worldFactor({ paused: true, particles, queue })
+  );
 
   return () => {
     cancelControls();
