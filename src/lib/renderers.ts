@@ -1,17 +1,20 @@
 import { IWorld, ISystem } from "./types";
 
+export type RenderSystem = (
+  ctx: CanvasRenderingContext2D,
+  world: IWorld
+) => IWorld;
+
 export const renderer = (
   ctx: CanvasRenderingContext2D,
-  systems: ISystem[]
+  systems: RenderSystem[]
 ): ISystem => (world: IWorld) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  systems.forEach((system) => system(world));
+  systems.forEach((system) => system(ctx, world));
   return world;
 };
 
-export const circleSystem = (ctx: CanvasRenderingContext2D): ISystem => (
-  world: IWorld
-) => {
+export const circleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((ball) => {
     if (ball.radius) {
       ctx.strokeStyle = "grey";
@@ -23,9 +26,7 @@ export const circleSystem = (ctx: CanvasRenderingContext2D): ISystem => (
   return world;
 };
 
-export const rectangleSystem = (ctx: CanvasRenderingContext2D): ISystem => (
-  world: IWorld
-) => {
+export const rectangleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((ball) => {
     if (ball.size) {
       ctx.strokeStyle = "grey";
@@ -89,10 +90,10 @@ export const drawPolygon = (
   }
 };
 
-export const polygonSystem = (
-  ctx: CanvasRenderingContext2D,
-  showBounding: boolean
-): ISystem => (world: IWorld) => {
+export const polygonSystem = (showBounding: boolean): RenderSystem => (
+  ctx,
+  world
+) => {
   world.particles.forEach((particle) => {
     if (particle.points) {
       const {

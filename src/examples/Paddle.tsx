@@ -127,7 +127,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     movementSystem,
     collisionSystem(collisionHandler),
     queueHandler,
-    renderer(ctx, [circleSystem(ctx), rectangleSystem(ctx)]),
+    renderer(ctx, [circleSystem, rectangleSystem]),
   ]);
 
   const cancelLoop = gameLoop(

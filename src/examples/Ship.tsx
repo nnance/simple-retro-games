@@ -217,7 +217,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     collisionSystem(collisionHandler),
     queueHandler,
     offScreenSystem(size),
-    renderer(ctx, [polygonSystem(ctx, SHOW_BOUNDING)]),
+    renderer(ctx, [polygonSystem(SHOW_BOUNDING)]),
   ]);
 
   gameLoop(update, worldFactor({ paused: true, particles, queue }));

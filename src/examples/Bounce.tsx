@@ -57,7 +57,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     movementSystem,
     collisionSystem(collisionHandler),
     queueHandler,
-    renderer(ctx, [circleSystem(ctx)]),
+    renderer(ctx, [circleSystem]),
   ]);
 
   const cancelControls = gameControls({
