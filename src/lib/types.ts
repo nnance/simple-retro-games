@@ -22,6 +22,16 @@ export interface IParticle {
   friction?: number;
   thrust?: number;
   color?: string;
+  components: IComponent[];
+}
+
+export interface IComponent {
+  particle: number;
+  family?: string;
+}
+
+export interface IPosition extends IComponent {
+  pos: IPoint;
 }
 
 export interface ISystemQueue {

@@ -1,7 +1,6 @@
 import React from "react";
 import {
   IRect,
-  idFactory,
   IParticle,
   updater,
   movementSystem,
@@ -11,8 +10,9 @@ import {
   useGameContext,
   collisionHandler,
   queueHandler,
-  worldFactor,
+  worldFactory,
   useGameControls,
+  particleFactory,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -52,9 +52,9 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   React.useEffect(() => {
     const { width, height } = props;
     setGameState(
-      worldFactor({
+      worldFactory({
         paused: true,
-        particles: particleFactory({ width, height }),
+        particles: particlesFactory({ width, height }),
       })
     );
   }, [props, setGameState]);
@@ -72,34 +72,29 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   );
 };
 
-const particleFactory = ({ width, height }: IRect): IParticle[] => {
+const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   return [
-    {
-      id: idFactory(),
+    particleFactory({
       pos: { x: 30, y: 30 },
       radius: 20,
       velocity: { x: 3, y: 3 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: 0, y: height },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: width, y: 0 },
       size: { width: 10, height },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: 0, y: -10 },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: -10, y: 0 },
       size: { width: 10, height },
-    },
+    }),
   ];
 };
 

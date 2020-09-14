@@ -1,16 +1,23 @@
 import React from "react";
-import { ISystem, IWorld } from "./types";
+import { ISystem, IWorld, IParticle } from "./types";
 import { createSystemQueue } from "./queue";
 
 const MAX_NUM = 100000;
 
 export const idFactory = () => Math.floor(Math.random() * MAX_NUM);
 
-export const worldFactor = (world: Partial<IWorld>) => ({
+export const worldFactory = (world: Partial<IWorld>): IWorld => ({
   paused: false,
   particles: [],
   queue: createSystemQueue(),
   ...world,
+});
+
+export const particleFactory = (particle: Partial<IParticle>): IParticle => ({
+  id: idFactory(),
+  components: [],
+  pos: { x: 0, y: 0 },
+  ...particle,
 });
 
 // get a random number within a range

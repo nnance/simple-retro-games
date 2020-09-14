@@ -1,19 +1,17 @@
 import { createSystemQueue, queueHandler } from "./queue";
-import { idFactory, worldFactor } from "./engine";
+import { worldFactory, particleFactory } from "./engine";
 import { ISystem } from "./types";
 
-const world = worldFactor({
+const world = worldFactory({
   particles: [
-    {
-      id: idFactory(),
+    particleFactory({
       family: "ball1",
       pos: { x: 10, y: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "ball2",
       pos: { x: 20, y: 20 },
-    },
+    }),
   ],
 });
 

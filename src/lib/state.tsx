@@ -1,8 +1,8 @@
 import React from "react";
 import { IWorld } from "./types";
-import { worldFactor } from "./engine";
+import { worldFactory } from "./engine";
 
-const defaultWorld = worldFactor({});
+const defaultWorld = worldFactory({});
 
 const GameContext = React.createContext<
   [IWorld, React.Dispatch<React.SetStateAction<IWorld>>]

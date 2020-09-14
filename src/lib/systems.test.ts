@@ -1,11 +1,5 @@
-import {
-  movementSystem,
-  idFactory,
-  collisionSystem,
-  updater,
-  IParticle,
-} from ".";
-import { worldFactor } from "./engine";
+import { movementSystem, idFactory, collisionSystem, updater } from ".";
+import { worldFactory, particleFactory } from "./engine";
 import {
   collisionHandler,
   CollisionHandler,
@@ -13,15 +7,14 @@ import {
 } from "./systems";
 
 test("moves based on velocity", () => {
-  const ball: IParticle = {
-    id: idFactory(),
+  const ball = particleFactory({
     pos: { x: 10, y: 10 },
     radius: 20,
     velocity: { x: 5, y: 5 },
-  };
+  });
 
   const { particles } = movementSystem(
-    worldFactor({
+    worldFactory({
       particles: [ball],
     })
   );
@@ -32,20 +25,18 @@ test("moves based on velocity", () => {
 });
 
 test("detects circle bottom collision", () => {
-  const ball: IParticle = {
-    id: idFactory(),
+  const ball = particleFactory({
     pos: { x: 100, y: 85 },
     radius: 20,
     velocity: { x: 5, y: 5 },
-  };
-  const wall: IParticle = {
-    id: idFactory(),
+  });
+  const wall = particleFactory({
     pos: { x: 50, y: 100 },
     size: { width: 100, height: 10 },
-  };
+  });
 
   const world = collisionSystem(collisionHandler)(
-    worldFactor({
+    worldFactory({
       particles: [ball, wall],
     })
   );
@@ -58,20 +49,20 @@ test("detects circle bottom collision", () => {
 });
 
 test("detects circle top collision", () => {
-  const ball: IParticle = {
+  const ball = particleFactory({
     id: idFactory(),
     pos: { x: 100, y: 25 },
     radius: 20,
     velocity: { x: 5, y: -5 },
-  };
-  const wall: IParticle = {
+  });
+  const wall = particleFactory({
     id: idFactory(),
     pos: { x: 50, y: 0 },
     size: { width: 100, height: 10 },
-  };
+  });
 
   const world = collisionSystem(collisionHandler)(
-    worldFactor({
+    worldFactory({
       particles: [ball, wall],
     })
   );
@@ -84,20 +75,20 @@ test("detects circle top collision", () => {
 });
 
 test("detects circle right collision", () => {
-  const ball: IParticle = {
+  const ball = particleFactory({
     id: idFactory(),
     pos: { x: 85, y: 10 },
     radius: 20,
     velocity: { x: 5, y: -5 },
-  };
-  const wall: IParticle = {
+  });
+  const wall = particleFactory({
     id: idFactory(),
     pos: { x: 100, y: 0 },
     size: { width: 10, height: 100 },
-  };
+  });
 
   const world = collisionSystem(collisionHandler)(
-    worldFactor({
+    worldFactory({
       particles: [ball, wall],
     })
   );
@@ -111,20 +102,20 @@ test("detects circle right collision", () => {
 });
 
 test("detects circle left collision", () => {
-  const ball: IParticle = {
+  const ball = particleFactory({
     id: idFactory(),
     pos: { x: 25, y: 10 },
     radius: 20,
     velocity: { x: 5, y: -5 },
-  };
-  const wall: IParticle = {
+  });
+  const wall = particleFactory({
     id: idFactory(),
     pos: { x: 0, y: 0 },
     size: { width: 10, height: 100 },
-  };
+  });
 
   const world = collisionSystem(collisionHandler)(
-    worldFactor({
+    worldFactory({
       particles: [ball, wall],
     })
   );
@@ -138,17 +129,17 @@ test("detects circle left collision", () => {
 });
 
 test("publishes events on circle collision", () => {
-  const ball: IParticle = {
+  const ball = particleFactory({
     id: idFactory(),
     pos: { x: 100, y: 85 },
     radius: 20,
     velocity: { x: 5, y: 5 },
-  };
-  const wall: IParticle = {
+  });
+  const wall = particleFactory({
     id: idFactory(),
     pos: { x: 50, y: 100 },
     size: { width: 100, height: 10 },
-  };
+  });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
     expect(event.particle.id).toEqual(wall.id);
@@ -157,7 +148,7 @@ test("publishes events on circle collision", () => {
   };
 
   const { queue } = collisionSystem(collisionHandler)(
-    worldFactor({
+    worldFactory({
       particles: [ball, wall],
     })
   );
@@ -167,17 +158,17 @@ test("publishes events on circle collision", () => {
 });
 
 test("publishes collision event after game loop", () => {
-  const ball: IParticle = {
+  const ball = particleFactory({
     id: idFactory(),
     pos: { x: 100, y: 75 },
     radius: 20,
     velocity: { x: 5, y: 5 },
-  };
-  const wall: IParticle = {
+  });
+  const wall = particleFactory({
     id: idFactory(),
     pos: { x: 50, y: 100 },
     size: { width: 100, height: 10 },
-  };
+  });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
     expect(event.particle.id).toEqual(wall.id);
@@ -188,7 +179,7 @@ test("publishes collision event after game loop", () => {
   const gameLoop = updater([movementSystem, collisionSystem(collisionHandler)]);
 
   const newWorld = gameLoop(
-    worldFactor({
+    worldFactory({
       particles: [ball, wall],
     })
   );

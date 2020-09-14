@@ -1,7 +1,6 @@
 import React from "react";
 import {
   IParticle,
-  idFactory,
   movementSystem,
   collisionSystem,
   updater,
@@ -11,46 +10,42 @@ import {
   IRect,
   collisionHandler,
   queueHandler,
-  worldFactor,
+  worldFactory,
   gameControls,
   createSystemQueue,
+  particleFactory,
 } from "../lib";
 import { useColSize } from "../Layout";
 
-const particleFactory = ({ width, height }: IRect): IParticle[] => {
+const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   return [
-    {
-      id: idFactory(),
+    particleFactory({
       family: "ball",
       pos: { x: 30, y: 30 },
       radius: 20,
       velocity: { x: 3, y: 3 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: 0, y: height },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: width, y: 0 },
       size: { width: 10, height },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: 0, y: -10 },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       pos: { x: -10, y: 0 },
       size: { width: 10, height },
-    },
+    }),
   ];
 };
 
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
-  const particles = particleFactory(size);
+  const particles = particlesFactory(size);
   const queue = createSystemQueue();
 
   const update = updater([
@@ -67,7 +62,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
 
   const cancelLoop = gameLoop(
     update,
-    worldFactor({
+    worldFactory({
       paused: true,
       particles,
       queue,

@@ -1,7 +1,6 @@
 import React from "react";
 import {
   IParticle,
-  idFactory,
   updater,
   movementSystem,
   renderer,
@@ -17,7 +16,8 @@ import {
   createSystemQueue,
   queueHandler,
   ICollisionEvent,
-  worldFactor,
+  worldFactory,
+  particleFactory,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -105,20 +105,20 @@ const ASTEROIDS = [
 const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
   const velocity = () => random(ASTEROIDS_SPEED * -1, ASTEROIDS_SPEED);
 
-  return ASTEROIDS.map((points) => ({
-    id: idFactory(),
-    family: "asteroid",
-    pos: { x: random(0, width), y: random(0, width) },
-    radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]),
-    scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]),
-    velocity: { x: velocity(), y: velocity() },
-    points,
-  }));
+  return ASTEROIDS.map((points) =>
+    particleFactory({
+      family: "asteroid",
+      pos: { x: random(0, width), y: random(0, width) },
+      radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]),
+      scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]),
+      velocity: { x: velocity(), y: velocity() },
+      points,
+    })
+  );
 };
 
-const particleFactory = (size: IRect): IParticle[] => {
-  const ship = {
-    id: idFactory(),
+const particlesFactory = (size: IRect): IParticle[] => {
+  const ship = particleFactory({
     family: "ship",
     pos: { x: 200, y: 200 },
     radius: SHIP_SIZE,
@@ -133,7 +133,7 @@ const particleFactory = (size: IRect): IParticle[] => {
       [3, 3],
       [0, -6],
     ],
-  } as IParticle;
+  });
 
   return [ship, ...asteroidFactory(1, size)];
 };
@@ -176,7 +176,7 @@ const shipCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
 };
 
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
-  const particles = particleFactory(size);
+  const particles = particlesFactory(size);
   const queue = createSystemQueue();
 
   const updateShip = (value: Partial<IParticle>) => () => {
@@ -220,7 +220,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [polygonSystem(SHOW_BOUNDING)]),
   ]);
 
-  gameLoop(update, worldFactor({ paused: true, particles, queue }));
+  gameLoop(update, worldFactory({ paused: true, particles, queue }));
 };
 
 const Ship = () => {

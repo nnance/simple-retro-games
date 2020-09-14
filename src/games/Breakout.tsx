@@ -1,7 +1,6 @@
 import React, { Fragment } from "react";
 import {
   IRect,
-  idFactory,
   IParticle,
   updater,
   movementSystem,
@@ -13,9 +12,10 @@ import {
   useGameContext,
   CollisionHandler,
   queueHandler,
-  worldFactor,
+  worldFactory,
   ICollisionEvent,
   ISystem,
+  particleFactory,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -74,16 +74,17 @@ const getBricks = (): IParticle[] => {
       const colorCode = level1[row][col];
       const { width, height } = brickSize;
 
-      bricks.push({
-        id: idFactory(),
-        family: "brick",
-        pos: {
-          x: wallSize + (width + brickGap) * col,
-          y: wallSize + (height + brickGap) * row,
-        },
-        color: colorMap[colorCode],
-        size: brickSize,
-      });
+      bricks.push(
+        particleFactory({
+          family: "brick",
+          pos: {
+            x: wallSize + (width + brickGap) * col,
+            y: wallSize + (height + brickGap) * row,
+          },
+          color: colorMap[colorCode],
+          size: brickSize,
+        })
+      );
     }
   }
   return bricks;
@@ -178,10 +179,10 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
 
   React.useEffect(() => {
     const { width, height } = props;
-    const particles = particleFactory({ width, height });
+    const particles = particlesFactory({ width, height });
 
     setGameState(
-      worldFactor({
+      worldFactory({
         paused: true,
         particles,
       })
@@ -203,41 +204,36 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   );
 };
 
-const particleFactory = ({ width, height }: IRect): IParticle[] => {
+const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   const bricks = getBricks().flat();
 
   return [
-    {
-      id: idFactory(),
+    particleFactory({
       family: "ball",
       pos: { x: 30, y: 100 },
       radius: 5,
       velocity: { x: 3, y: 3 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "rightWall",
       pos: { x: width, y: 0 },
       size: { width: 10, height },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "top",
       pos: { x: 0, y: -10 },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "leftWall",
       pos: { x: -10, y: 0 },
       size: { width: 10, height },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "paddle",
       pos: { x: width / 2 - brickSize.width / 2, y: 500 },
       size: brickSize,
-    },
+    }),
     ...bricks,
   ];
 };

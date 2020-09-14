@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  idFactory,
   IParticle,
   updater,
   movementSystem,
@@ -17,7 +16,8 @@ import {
   CollisionHandler,
   IBounceEvent,
   ISystem,
-  worldFactor,
+  worldFactory,
+  particleFactory,
 } from "../lib";
 import { useColSize } from "../Layout";
 import { GameProvider } from "../lib/state";
@@ -38,64 +38,59 @@ const brickCollisionSystem = (event: IBounceEvent): ISystem => (world) => {
   return world;
 };
 
-const particleFactory = ({ width, height }: IRect): IParticle[] => {
+const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   const x = 190;
   const y = 150;
 
   const bricks = Array.from(Array(ROWS), (_, row) => {
     const { width, height } = BRICK_SIZE;
-    return Array.from(Array(COLS), (_, col) => ({
-      id: idFactory(),
-      family: "brick",
-      pos: { x: x + width * col, y: y + row * height },
-      size: { width, height },
-    }));
+    return Array.from(Array(COLS), (_, col) =>
+      particleFactory({
+        family: "brick",
+        pos: { x: x + width * col, y: y + row * height },
+        size: { width, height },
+      })
+    );
   }).flat();
 
   return [
-    {
-      id: idFactory(),
+    particleFactory({
       family: "ball",
       pos: { x: 30, y: 100 },
       radius: 5,
       velocity: { x: 3, y: 3 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "floor",
       pos: { x: 0, y: height },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "rightWall",
       pos: { x: width, y: 0 },
       size: { width: 10, height },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "top",
       pos: { x: 0, y: -10 },
       size: { width, height: 10 },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "leftWall",
       pos: { x: -10, y: 0 },
       size: { width: 10, height },
-    },
-    {
-      id: idFactory(),
+    }),
+    particleFactory({
       family: "paddle",
       pos: { x: 400, y: height - 100 },
       size: { width: 60, height: 10 },
-    },
+    }),
     ...bricks,
   ];
 };
 
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
-  const particles = particleFactory(size);
+  const particles = particlesFactory(size);
   const queue = createSystemQueue();
 
   const paddleEvent = (x: number) => () => {
@@ -132,7 +127,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
 
   const cancelLoop = gameLoop(
     update,
-    worldFactor({ paused: true, particles, queue })
+    worldFactory({ paused: true, particles, queue })
   );
 
   return () => {
