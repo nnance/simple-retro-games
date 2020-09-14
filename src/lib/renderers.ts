@@ -1,4 +1,4 @@
-import { IWorld, ISystem } from "./types";
+import { IWorld, ISystem, getColor } from "./types";
 
 export type RenderSystem = (
   ctx: CanvasRenderingContext2D,
@@ -29,8 +29,10 @@ export const circleSystem: RenderSystem = (ctx, world) => {
 export const rectangleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((particle) => {
     if (particle.size) {
-      if (particle.color) {
-        ctx.fillStyle = particle.color;
+      const colorComponent = getColor(particle);
+
+      if (colorComponent) {
+        ctx.fillStyle = colorComponent.color;
         ctx.fillRect(
           particle.pos.x,
           particle.pos.y,

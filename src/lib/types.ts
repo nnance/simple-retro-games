@@ -21,13 +21,23 @@ export interface IParticle {
   rotation?: number;
   friction?: number;
   thrust?: number;
-  color?: string;
   components: IComponent[];
 }
 
 export interface IComponent {
-  particle: number;
   family?: string;
+}
+
+export interface IColor extends IComponent {
+  color: string;
+}
+
+export function isColor(component: IComponent): component is IColor {
+  return (component as IColor).color !== undefined;
+}
+
+export function getColor(particle: IParticle) {
+  return particle.components.find((_) => isColor(_)) as IColor | undefined;
 }
 
 export interface IPosition extends IComponent {

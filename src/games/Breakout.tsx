@@ -16,6 +16,8 @@ import {
   ICollisionEvent,
   ISystem,
   particleFactory,
+  getColor,
+  IColor,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -58,9 +60,17 @@ const brickGap = 2;
 
 const brickSize = { width: 25, height: 12 };
 
-const Brick = ({ pos, size, color }: IParticle) => {
+const Brick = (particle: IParticle) => {
+  const { pos, size } = particle;
+  const comp = getColor(particle);
+
   return (
-    <rect {...pos} {...size} stroke={color || "grey"} fill={color || "none"} />
+    <rect
+      {...pos}
+      {...size}
+      stroke={comp!.color || "grey"}
+      fill={comp!.color || "none"}
+    />
   );
 };
 
@@ -74,6 +84,8 @@ const getBricks = (): IParticle[] => {
       const colorCode = level1[row][col];
       const { width, height } = brickSize;
 
+      const components = [{ color: colorMap[colorCode] } as IColor];
+
       bricks.push(
         particleFactory({
           family: "brick",
@@ -81,7 +93,7 @@ const getBricks = (): IParticle[] => {
             x: wallSize + (width + brickGap) * col,
             y: wallSize + (height + brickGap) * row,
           },
-          color: colorMap[colorCode],
+          components,
           size: brickSize,
         })
       );
