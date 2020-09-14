@@ -27,10 +27,25 @@ export const circleSystem: RenderSystem = (ctx, world) => {
 };
 
 export const rectangleSystem: RenderSystem = (ctx, world) => {
-  world.particles.forEach((ball) => {
-    if (ball.size) {
-      ctx.strokeStyle = "grey";
-      ctx.strokeRect(ball.pos.x, ball.pos.y, ball.size.width, ball.size.height);
+  world.particles.forEach((particle) => {
+    if (particle.size) {
+      if (particle.color) {
+        ctx.fillStyle = particle.color;
+        ctx.fillRect(
+          particle.pos.x,
+          particle.pos.y,
+          particle.size.width,
+          particle.size.height
+        );
+      } else {
+        ctx.strokeStyle = "grey";
+        ctx.strokeRect(
+          particle.pos.x,
+          particle.pos.y,
+          particle.size.width,
+          particle.size.height
+        );
+      }
     }
   });
 };

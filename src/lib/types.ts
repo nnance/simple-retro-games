@@ -21,6 +21,7 @@ export interface IParticle {
   rotation?: number;
   friction?: number;
   thrust?: number;
+  color?: string;
 }
 
 export interface ISystemQueue {
