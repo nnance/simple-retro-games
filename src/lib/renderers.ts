@@ -3,13 +3,14 @@ import { IWorld, ISystem } from "./types";
 export type RenderSystem = (
   ctx: CanvasRenderingContext2D,
   world: IWorld
-) => IWorld;
+) => void;
 
 export const renderer = (
   ctx: CanvasRenderingContext2D,
   systems: RenderSystem[]
 ): ISystem => (world: IWorld) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
   systems.forEach((system) => system(ctx, world));
   return world;
 };
@@ -23,7 +24,6 @@ export const circleSystem: RenderSystem = (ctx, world) => {
       ctx.stroke();
     }
   });
-  return world;
 };
 
 export const rectangleSystem: RenderSystem = (ctx, world) => {
@@ -33,7 +33,6 @@ export const rectangleSystem: RenderSystem = (ctx, world) => {
       ctx.strokeRect(ball.pos.x, ball.pos.y, ball.size.width, ball.size.height);
     }
   });
-  return world;
 };
 
 const rotatePolygon = (
@@ -117,5 +116,4 @@ export const polygonSystem = (showBounding: boolean): RenderSystem => (
       );
     }
   });
-  return world;
 };
