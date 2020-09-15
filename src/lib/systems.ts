@@ -1,4 +1,4 @@
-import { ISystem, IParticle } from "./types";
+import { ISystem, IParticle, getAngle } from "./types";
 
 const FPS = 60;
 
@@ -16,13 +16,14 @@ const applyFriction = (particle: IParticle) => {
 };
 
 const applyThrust = (particle: IParticle) => {
-  const { velocity, thrust, angle } = particle;
+  const { velocity, thrust } = particle;
+  const angle = getAngle(particle);
   if (velocity && thrust && angle !== undefined) {
     return {
       ...particle,
       velocity: {
-        x: velocity.x + (thrust * Math.cos(angle)) / FPS,
-        y: velocity.y - (thrust * Math.sin(angle)) / FPS,
+        x: velocity.x + (thrust * Math.cos(angle.angle)) / FPS,
+        y: velocity.y - (thrust * Math.sin(angle.angle)) / FPS,
       },
     };
   } else return particle;
@@ -48,13 +49,12 @@ export const movementSystem: ISystem = (world) => {
     const movement = applyThrust(state);
     const velocity = applyFriction(movement);
     const pos = applyVelocity(velocity);
+    const angle = getAngle(state);
 
-    if (state.rotation !== undefined && state.angle !== undefined) {
+    if (angle) {
       return {
         ...pos,
-        angle: state.rotation
-          ? (state.angle || 0) + state.rotation
-          : state.angle,
+        components: [{ ...angle, angle: angle.angle + angle.rotation }],
       };
     } else {
       return { ...pos };

@@ -17,8 +17,6 @@ export interface IParticle {
   size?: IRect;
   velocity?: IPoint;
   points?: [number, number][];
-  angle?: number;
-  rotation?: number;
   friction?: number;
   thrust?: number;
   components: IComponent[];
@@ -38,6 +36,19 @@ export function isColor(component: IComponent): component is IColor {
 
 export function getColor(particle: IParticle) {
   return particle.components.find((_) => isColor(_)) as IColor | undefined;
+}
+
+export interface IAngle extends IComponent {
+  rotation: number;
+  angle: number;
+}
+
+export function isAngle(component: IComponent): component is IAngle {
+  return (component as IAngle).angle !== undefined;
+}
+
+export function getAngle(particle: IParticle) {
+  return particle.components.find((_) => isAngle(_)) as IAngle | undefined;
 }
 
 export interface IPosition extends IComponent {

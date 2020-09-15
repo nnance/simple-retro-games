@@ -18,6 +18,7 @@ import {
   ICollisionEvent,
   worldFactory,
   particleFactory,
+  IAngle,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -125,7 +126,6 @@ const particlesFactory = (size: IRect): IParticle[] => {
     scale: SHIP_SCALE,
     velocity: { x: 0, y: 0 },
     friction: FRICTION,
-    angle: 0,
     points: [
       [0, -6],
       [-3, 3],
@@ -133,6 +133,7 @@ const particlesFactory = (size: IRect): IParticle[] => {
       [3, 3],
       [0, -6],
     ],
+    components: [{ angle: 0, rotation: 0 } as IAngle],
   });
 
   return [ship, ...asteroidFactory(1, size)];
@@ -179,7 +180,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const particles = particlesFactory(size);
   const queue = createSystemQueue();
 
-  const updateShip = (value: Partial<IParticle>) => () => {
+  const updateShip = (value: Partial<IAngle> | Partial<IParticle>) => () => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
         particle.family === "ship"

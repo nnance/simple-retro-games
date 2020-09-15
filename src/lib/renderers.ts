@@ -1,4 +1,4 @@
-import { IWorld, ISystem, getColor } from "./types";
+import { IWorld, ISystem, getColor, getAngle } from "./types";
 
 export type RenderSystem = (
   ctx: CanvasRenderingContext2D,
@@ -111,11 +111,12 @@ export const polygonSystem = (showBounding: boolean): RenderSystem => (
   world
 ) => {
   world.particles.forEach((particle) => {
-    if (particle.points) {
+    const angle = getAngle(particle);
+
+    if (particle.points && angle) {
       const {
         pos: { x, y },
         radius = 0,
-        angle = 0,
         scale,
         points,
       } = particle;
@@ -125,7 +126,7 @@ export const polygonSystem = (showBounding: boolean): RenderSystem => (
         x,
         y,
         radius,
-        angle,
+        angle.angle,
         points,
         scale,
         showBounding,
