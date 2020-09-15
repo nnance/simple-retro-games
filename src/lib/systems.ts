@@ -1,10 +1,21 @@
-import { ISystem, IParticle } from "./types";
+import {
+  ISystem,
+  IParticle,
+  hasAngle,
+  hasMovement,
+  hasPos,
+  hasEntity,
+  hasRadius,
+  hasSize,
+  hasThrust,
+} from "./types";
 
 const FPS = 60;
 
 const applyFriction = (particle: IParticle) => {
-  const { velocity, friction, thrust } = particle;
-  if (velocity && thrust === 0 && friction) {
+  if (hasMovement(particle) && hasThrust(particle)) {
+    const { velocity, friction } = particle;
+
     return {
       ...particle,
       velocity: {
@@ -12,12 +23,14 @@ const applyFriction = (particle: IParticle) => {
         y: velocity.y - (friction * velocity.y) / FPS,
       },
     };
-  } else return particle;
+  }
+  return particle;
 };
 
 const applyThrust = (particle: IParticle) => {
-  const { velocity, thrust, angle } = particle;
-  if (velocity && thrust && angle !== undefined) {
+  if (hasMovement(particle) && hasAngle(particle) && hasThrust(particle)) {
+    const { thrust, angle, velocity } = particle;
+
     return {
       ...particle,
       velocity: {
@@ -25,13 +38,14 @@ const applyThrust = (particle: IParticle) => {
         y: velocity.y - (thrust * Math.sin(angle)) / FPS,
       },
     };
-  } else return particle;
+  }
+  return particle;
 };
 
 const applyVelocity = (particle: IParticle) => {
-  const { velocity, pos } = particle;
+  if (hasMovement(particle) && hasPos(particle)) {
+    const { velocity, pos } = particle;
 
-  if (velocity) {
     return {
       ...particle,
       pos: {
@@ -49,16 +63,15 @@ export const movementSystem: ISystem = (world) => {
     const velocity = applyFriction(movement);
     const pos = applyVelocity(velocity);
 
-    if (state.rotation !== undefined && state.angle !== undefined) {
+    if (hasAngle(state)) {
       return {
         ...pos,
         angle: state.rotation
           ? (state.angle || 0) + state.rotation
           : state.angle,
       };
-    } else {
-      return { ...pos };
     }
+    return { ...pos };
   });
 
   return { ...world, particles };
@@ -70,14 +83,20 @@ export interface IBounceEvent {
 }
 
 export const bounceEventSystem = (event: IBounceEvent): ISystem => (world) => {
-  if (event.collider !== undefined) {
+  if (
+    hasEntity(event.collider) &&
+    hasPos(event.collider) &&
+    hasMovement(event.collider) &&
+    hasRadius(event.collider)
+  ) {
     const { id, pos, velocity, radius } = event.collider;
 
     const particles = world.particles.map((particle) => {
       if (
-        id === particle.id &&
-        velocity !== undefined &&
-        radius !== undefined
+        hasEntity(particle) &&
+        hasPos(event.particle) &&
+        hasSize(event.particle) &&
+        id === particle.id
       ) {
         const rect1 = {
           x: pos.x - radius,
@@ -141,7 +160,7 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
   world
 ) => {
   world.particles.forEach((collider) => {
-    if (collider.velocity && collider.radius) {
+    if (hasMovement(collider) && hasRadius(collider) && hasPos(collider)) {
       const { pos, radius } = collider;
 
       const rect1 = {
@@ -152,7 +171,12 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
       };
 
       world.particles.forEach((particle) => {
-        if (particle.size) {
+        if (
+          hasSize(particle) &&
+          hasPos(particle) &&
+          hasEntity(particle) &&
+          hasEntity(collider)
+        ) {
           const rect2 = {
             x: particle.pos.x,
             y: particle.pos.y,
@@ -161,7 +185,7 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
           };
 
           if (
-            particle !== collider &&
+            particle.id !== collider.id &&
             rect1.x < rect2.x + rect2.width &&
             rect1.x + rect1.width > rect2.x &&
             rect1.y < rect2.y + rect2.height &&
@@ -176,8 +200,8 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
           }
         } else if (
           particle !== collider &&
-          particle.radius &&
-          collider.radius
+          hasPos(particle) &&
+          hasRadius(particle)
         ) {
           const dx = particle.pos.x - collider.pos.x;
           const dy = particle.pos.y - collider.pos.y;

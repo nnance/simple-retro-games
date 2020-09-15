@@ -18,6 +18,8 @@ import {
   queueHandler,
   ICollisionEvent,
   worldFactor,
+  hasPos,
+  hasEntity,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -133,40 +135,49 @@ const particleFactory = (size: IRect): IParticle[] => {
       [3, 3],
       [0, -6],
     ],
-  } as IParticle;
+  };
 
   return [ship, ...asteroidFactory(1, size)];
 };
 
 const offScreenSystem = (size: IRect): ISystem => (world) => {
-  const particles = world.particles.map((particle) => ({
-    ...particle,
-    pos: {
-      x:
-        particle.pos.x < 0
-          ? size.width
-          : particle.pos.x > size.width
-          ? 0
-          : particle.pos.x,
-      y:
-        particle.pos.y < 0
-          ? size.height
-          : particle.pos.y > size.height
-          ? 0
-          : particle.pos.y,
-    },
-  }));
+  const particles = world.particles.map((particle) =>
+    hasPos(particle)
+      ? {
+          ...particle,
+          pos: {
+            x:
+              particle.pos.x < 0
+                ? size.width
+                : particle.pos.x > size.width
+                ? 0
+                : particle.pos.x,
+            y:
+              particle.pos.y < 0
+                ? size.height
+                : particle.pos.y > size.height
+                ? 0
+                : particle.pos.y,
+          },
+        }
+      : particle
+  );
   return { ...world, particles };
 };
 
 const shipCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
   if (
     event.collider &&
+    hasEntity(event.collider) &&
     event.collider.family === "asteroid" &&
+    hasEntity(event.particle) &&
     event.particle.family === "ship"
   ) {
     const particles = world.particles.reduce((prev, particle) => {
-      const hit = event.collider?.id === particle.id;
+      const hit =
+        hasEntity(event.collider) &&
+        hasEntity(particle) &&
+        event.collider.id === particle.id;
       return hit ? prev : [...prev, particle];
     }, [] as IParticle[]);
 
@@ -182,7 +193,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const updateShip = (value: Partial<IParticle>) => () => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
-        particle.family === "ship"
+        hasEntity(particle) && particle.family === "ship"
           ? {
               ...particle,
               ...value,

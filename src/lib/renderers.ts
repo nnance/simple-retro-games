@@ -1,4 +1,13 @@
-import { IWorld, ISystem } from "./types";
+import {
+  IWorld,
+  ISystem,
+  hasPos,
+  hasRadius,
+  hasSize,
+  hasColor,
+  hasPoints,
+  hasAngle,
+} from "./types";
 
 export type RenderSystem = (
   ctx: CanvasRenderingContext2D,
@@ -17,7 +26,7 @@ export const renderer = (
 
 export const circleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((ball) => {
-    if (ball.radius) {
+    if (hasPos(ball) && hasRadius(ball)) {
       ctx.strokeStyle = "grey";
       ctx.beginPath();
       ctx.arc(ball.pos.x, ball.pos.y, ball.radius!, 0, Math.PI * 2, true); // Outer circle
@@ -28,8 +37,8 @@ export const circleSystem: RenderSystem = (ctx, world) => {
 
 export const rectangleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((particle) => {
-    if (particle.size) {
-      if (particle.color) {
+    if (hasSize(particle) && hasPos(particle)) {
+      if (hasColor(particle)) {
         ctx.fillStyle = particle.color;
         ctx.fillRect(
           particle.pos.x,
@@ -109,7 +118,12 @@ export const polygonSystem = (showBounding: boolean): RenderSystem => (
   world
 ) => {
   world.particles.forEach((particle) => {
-    if (particle.points) {
+    if (
+      hasPoints(particle) &&
+      hasPos(particle) &&
+      hasRadius(particle) &&
+      hasAngle(particle)
+    ) {
       const {
         pos: { x, y },
         radius = 0,

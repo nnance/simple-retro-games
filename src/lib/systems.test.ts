@@ -11,6 +11,7 @@ import {
   CollisionHandler,
   bounceEventSystem,
 } from "./systems";
+import { IPos, IMovement, IEntity } from "./types";
 
 test("moves based on velocity", () => {
   const ball: IParticle = {
@@ -27,8 +28,10 @@ test("moves based on velocity", () => {
   );
 
   expect(particles.length).toEqual(1);
-  expect(particles[0].pos.x).toEqual(15);
-  expect(particles[0].pos.y).toEqual(15);
+
+  const { pos } = particles[0] as IPos;
+  expect(pos.x).toEqual(15);
+  expect(pos.y).toEqual(15);
 });
 
 test("detects circle bottom collision", () => {
@@ -53,8 +56,10 @@ test("detects circle bottom collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(80);
-  expect(particles[0].velocity?.y).toEqual(-5);
+
+  const { pos, velocity } = particles[0] as IPos & IMovement;
+  expect(pos.y).toEqual(80);
+  expect(velocity?.y).toEqual(-5);
 });
 
 test("detects circle top collision", () => {
@@ -79,8 +84,10 @@ test("detects circle top collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(30);
-  expect(particles[0].velocity?.y).toEqual(5);
+
+  const { pos, velocity } = particles[0] as IPos & IMovement;
+  expect(pos.y).toEqual(30);
+  expect(velocity?.y).toEqual(5);
 });
 
 test("detects circle right collision", () => {
@@ -105,9 +112,11 @@ test("detects circle right collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(10);
-  expect(particles[0].pos.x).toEqual(80);
-  expect(particles[0].velocity?.x).toEqual(-5);
+
+  const { pos, velocity } = particles[0] as IPos & IMovement;
+  expect(pos.y).toEqual(10);
+  expect(pos.x).toEqual(80);
+  expect(velocity?.x).toEqual(-5);
 });
 
 test("detects circle left collision", () => {
@@ -132,9 +141,11 @@ test("detects circle left collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(10);
-  expect(particles[0].pos.x).toEqual(30);
-  expect(particles[0].velocity?.x).toEqual(-5);
+
+  const { pos, velocity } = particles[0] as IPos & IMovement;
+  expect(pos.y).toEqual(10);
+  expect(pos.x).toEqual(30);
+  expect(velocity?.x).toEqual(-5);
 });
 
 test("publishes events on circle collision", () => {
@@ -151,8 +162,11 @@ test("publishes events on circle collision", () => {
   };
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
-    expect(event.particle.id).toEqual(wall.id);
-    expect(event.collider.id).toEqual(ball.id);
+    const particle = event.particle as IEntity;
+    const collider = event.particle as IEntity;
+
+    expect(particle.id).toEqual((wall as IEntity).id);
+    expect(collider.id).toEqual((ball as IEntity).id);
     return bounceEventSystem(event)(world);
   };
 
@@ -180,8 +194,11 @@ test("publishes collision event after game loop", () => {
   };
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
-    expect(event.particle.id).toEqual(wall.id);
-    expect(event.collider.id).toEqual(ball.id);
+    const particle = event.particle as IEntity;
+    const collider = event.particle as IEntity;
+
+    expect(particle.id).toEqual((wall as IEntity).id);
+    expect(collider.id).toEqual((ball as IEntity).id);
     return bounceEventSystem(event)(world);
   };
 

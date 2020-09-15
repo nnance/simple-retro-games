@@ -13,13 +13,19 @@ import {
   queueHandler,
   worldFactor,
   useGameControls,
+  hasPos,
+  hasRadius,
 } from "../lib";
 import { useColSize } from "../Layout";
 
 const Ball = () => {
   const [gameState] = useGameContext();
 
-  if (gameState.particles.length) {
+  if (
+    gameState.particles.length &&
+    hasPos(gameState.particles[0]) &&
+    hasRadius(gameState.particles[0])
+  ) {
     const { pos, radius } = gameState.particles[0];
     return (
       <circle r={radius} cx={pos.x} cy={pos.y} stroke="grey" fill="none" />

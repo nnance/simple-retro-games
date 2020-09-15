@@ -18,6 +18,8 @@ import {
   IBounceEvent,
   ISystem,
   worldFactor,
+  hasEntity,
+  IEntity,
 } from "../lib";
 import { useColSize } from "../Layout";
 import { GameProvider } from "../lib/state";
@@ -27,9 +29,16 @@ const ROWS = 2;
 const COLS = 11;
 
 const brickCollisionSystem = (event: IBounceEvent): ISystem => (world) => {
-  if (event.collider && event.particle.family === "brick") {
+  if (
+    event.collider &&
+    hasEntity(event.particle) &&
+    event.particle.family === "brick"
+  ) {
     const particles = world.particles.reduce((prev, particle) => {
-      const hit = event.particle.id === particle.id;
+      const hit =
+        hasEntity(event.particle) &&
+        hasEntity(particle) &&
+        event.particle.id === particle.id;
       return hit ? prev : [...prev, particle];
     }, [] as IParticle[]);
 
@@ -101,7 +110,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const paddleEvent = (x: number) => () => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
-        particle.family === "paddle"
+        (particle as IEntity).family === "paddle"
           ? { ...particle, velocity: { x, y: 0 } }
           : particle
       );

@@ -16,6 +16,14 @@ import {
   worldFactor,
   ICollisionEvent,
   ISystem,
+  IColor,
+  IPos,
+  ISize,
+  hasEntity,
+  hasPos,
+  hasSize,
+  hasColor,
+  hasRadius,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -58,7 +66,7 @@ const brickGap = 2;
 
 const brickSize = { width: 25, height: 12 };
 
-const Brick = ({ pos, size, color }: IParticle) => {
+const Brick = ({ pos, size, color }: IPos & ISize & IColor) => {
   return (
     <rect {...pos} {...size} stroke={color || "grey"} fill={color || "none"} />
   );
@@ -90,9 +98,16 @@ const getBricks = (): IParticle[] => {
 };
 
 const brickCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
-  if (event.collider && event.particle.family === "brick") {
+  if (
+    event.collider &&
+    hasEntity(event.particle) &&
+    event.particle.family === "brick"
+  ) {
     const particles = world.particles.reduce((prev, particle) => {
-      const hit = event.particle.id === particle.id;
+      const hit =
+        hasEntity(event.particle) &&
+        hasEntity(particle) &&
+        event.particle.id === particle.id;
       return hit ? prev : [...prev, particle];
     }, [] as IParticle[]);
 
@@ -107,7 +122,13 @@ const Grid = () => {
   return (
     <Fragment>
       {particles.map((brick, idx) =>
-        brick.family === "brick" ? <Brick key={idx} {...brick} /> : null
+        hasEntity(brick) &&
+        hasPos(brick) &&
+        hasSize(brick) &&
+        hasColor(brick) &&
+        brick.family === "brick" ? (
+          <Brick key={idx} {...brick} />
+        ) : null
       )}
     </Fragment>
   );
@@ -115,9 +136,9 @@ const Grid = () => {
 
 const Ball = () => {
   const [{ particles }] = useGameContext();
-  const ball = particles.find((_) => _.family === "ball");
+  const ball = particles.find((_) => hasEntity(_) && _.family === "ball");
 
-  return ball ? (
+  return ball && hasPos(ball) && hasRadius(ball) ? (
     <circle
       r={ball.radius}
       cx={ball.pos.x}
@@ -130,12 +151,12 @@ const Ball = () => {
 
 const Paddle = () => {
   const [{ particles, queue }] = useGameContext();
-  const paddle = particles.find((_) => _.family === "paddle");
+  const paddle = particles.find((_) => hasEntity(_) && _.family === "paddle");
 
   const paddleEvent = (x: number) => () => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
-        particle.family === "paddle"
+        hasEntity(particle) && particle.family === "paddle"
           ? { ...particle, velocity: { x, y: 0 } }
           : particle
       );
@@ -152,7 +173,9 @@ const Paddle = () => {
       queue.enqueue((world) => ({ ...world, paused: !world.paused })),
   });
 
-  return paddle ? <rect {...paddle.pos} {...paddle.size} fill="cyan" /> : null;
+  return paddle && hasPos(paddle) && hasSize(paddle) ? (
+    <rect {...paddle.pos} {...paddle.size} stroke="cyan" fill="none" />
+  ) : null;
 };
 
 const collisionHandler: CollisionHandler = (event) => (world) => {
