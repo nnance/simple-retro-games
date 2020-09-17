@@ -10,10 +10,16 @@ export interface IRect {
 
 export type TypeChecker<T> = (obj: unknown) => obj is T;
 
-export interface IParticle {
+export interface IEntity {
   id: number;
   family?: string;
 }
+
+export const hasEntity: TypeChecker<IEntity> = (
+  particle
+): particle is IEntity => {
+  return (particle as IEntity).id !== undefined;
+};
 
 export interface IPos {
   pos: IPoint;
