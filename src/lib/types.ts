@@ -11,19 +11,75 @@ export interface IRect {
 export interface IParticle {
   id: number;
   family?: string;
-  pos: IPoint;
-  radius?: number;
-  scale?: number;
-  size?: IRect;
-  velocity?: IPoint;
-  points?: [number, number][];
-  friction?: number;
-  thrust?: number;
   components: IComponent[];
 }
 
 export interface IComponent {
   family?: string;
+}
+
+export interface IRadius extends IComponent {
+  radius: number;
+}
+
+export function isRadius(component: IComponent): component is IRadius {
+  return (component as IRadius).radius !== undefined;
+}
+
+export function getRadius(particle: IParticle) {
+  return particle.components.find((_) => isRadius(_)) as IRadius | undefined;
+}
+
+export interface IPoints extends IComponent {
+  scale: number;
+  points: [number, number][];
+}
+
+export function isPoints(component: IComponent): component is IPoints {
+  return (component as IPoints).points !== undefined;
+}
+
+export function getPoints(particle: IParticle) {
+  return particle.components.find((_) => isPoints(_)) as IPoints | undefined;
+}
+
+export interface ISize extends IComponent {
+  size: IRect;
+}
+
+export function isSize(component: IComponent): component is ISize {
+  return (component as ISize).size !== undefined;
+}
+
+export function getSize(particle: IParticle) {
+  return particle.components.find((_) => isSize(_)) as ISize | undefined;
+}
+
+export interface IMovement extends IComponent {
+  velocity: IPoint;
+}
+
+export function isMovement(component: IComponent): component is IMovement {
+  return (component as IMovement).velocity !== undefined;
+}
+
+export function getMovement(particle: IParticle) {
+  return particle.components.find((_) => isMovement(_)) as
+    | IMovement
+    | undefined;
+}
+
+export interface IThrust extends IComponent {
+  friction: number;
+  thrust: number;
+}
+
+export function isThrust(component: IComponent): component is IThrust {
+  return (component as IThrust).thrust !== undefined;
+}
+
+export function getThrust(particle: IParticle) {
+  return particle.components.find((_) => isThrust(_)) as IThrust | undefined;
 }
 
 export interface IColor extends IComponent {
@@ -53,6 +109,16 @@ export function getAngle(particle: IParticle) {
 
 export interface IPosition extends IComponent {
   pos: IPoint;
+}
+
+export function isPosition(component: IComponent): component is IPosition {
+  return (component as IPosition).pos !== undefined;
+}
+
+export function getPosition(particle: IParticle) {
+  return particle.components.find((_) => isPosition(_)) as
+    | IPosition
+    | undefined;
 }
 
 export interface ISystemQueue {

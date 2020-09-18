@@ -1,47 +1,98 @@
-import { ISystem, IParticle, getAngle } from "./types";
+import {
+  ISystem,
+  IParticle,
+  getAngle,
+  isMovement,
+  getThrust,
+  isPosition,
+  getMovement,
+  isAngle,
+} from "./types";
 
 const FPS = 60;
 
 const applyFriction = (particle: IParticle) => {
-  const { velocity, friction, thrust } = particle;
-  if (velocity && thrust === 0 && friction) {
-    return {
-      ...particle,
-      velocity: {
-        x: velocity.x - (friction * velocity.x) / FPS,
-        y: velocity.y - (friction * velocity.y) / FPS,
-      },
-    };
-  } else return particle;
+  return {
+    ...particle,
+    components: particle.components.map((comp) => {
+      if (isMovement(comp)) {
+        const thrust = getThrust(particle);
+        if (thrust) {
+          const { velocity } = comp;
+          const { friction } = thrust;
+          return {
+            velocity: {
+              x: velocity.x - (friction * velocity.x) / FPS,
+              y: velocity.y - (friction * velocity.y) / FPS,
+            },
+          };
+        }
+        return comp;
+      }
+      return comp;
+    }),
+  };
 };
 
 const applyThrust = (particle: IParticle) => {
-  const { velocity, thrust } = particle;
-  const angle = getAngle(particle);
-  if (velocity && thrust && angle !== undefined) {
-    return {
-      ...particle,
-      velocity: {
-        x: velocity.x + (thrust * Math.cos(angle.angle)) / FPS,
-        y: velocity.y - (thrust * Math.sin(angle.angle)) / FPS,
-      },
-    };
-  } else return particle;
+  return {
+    ...particle,
+    components: particle.components.map((comp) => {
+      if (isMovement(comp)) {
+        const thrust = getThrust(particle);
+        const angle = getAngle(particle);
+        const { velocity } = comp;
+        if (thrust && angle) {
+          return {
+            velocity: {
+              x: velocity.x + (thrust.thrust * Math.cos(angle.angle)) / FPS,
+              y: velocity.y - (thrust.thrust * Math.sin(angle.angle)) / FPS,
+            },
+          };
+        }
+        return comp;
+      }
+      return comp;
+    }),
+  };
+};
+
+const applyRotation = (particle: IParticle) => {
+  return {
+    ...particle,
+    components: particle.components.map((comp) => {
+      if (isAngle(comp)) {
+        const { angle, rotation } = comp;
+        return {
+          ...comp,
+          angle: angle + rotation,
+        };
+      }
+      return comp;
+    }),
+  };
 };
 
 const applyVelocity = (particle: IParticle) => {
-  const { velocity, pos } = particle;
-
-  if (velocity) {
-    return {
-      ...particle,
-      pos: {
-        x: pos.x + velocity.x,
-        y: pos.y + velocity.y,
-      },
-    };
-  }
-  return particle;
+  return {
+    ...particle,
+    components: particle.components.map((comp) => {
+      if (isPosition(comp)) {
+        const movement = getMovement(particle);
+        const { pos } = comp;
+        if (movement) {
+          return {
+            pos: {
+              x: pos.x + movement.velocity.x,
+              y: pos.y + movement.velocity.y,
+            },
+          };
+        }
+        return comp;
+      }
+      return comp;
+    }),
+  };
 };
 
 export const movementSystem: ISystem = (world) => {
@@ -49,21 +100,12 @@ export const movementSystem: ISystem = (world) => {
     const movement = applyThrust(state);
     const velocity = applyFriction(movement);
     const pos = applyVelocity(velocity);
-    const angle = getAngle(state);
-
-    if (angle) {
-      return {
-        ...pos,
-        components: [{ ...angle, angle: angle.angle + angle.rotation }],
-      };
-    } else {
-      return { ...pos };
-    }
+    return applyRotation(pos);
   });
 
   return { ...world, particles };
 };
-
+/*
 export interface IBounceEvent {
   particle: IParticle;
   collider: IParticle;
@@ -198,3 +240,4 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
 
   return world;
 };
+*/
