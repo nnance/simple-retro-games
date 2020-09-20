@@ -7,6 +7,11 @@ import {
   isPosition,
   getMovement,
   isAngle,
+  getRadius,
+  getPosition,
+  getSize,
+  IPosition,
+  IMovement,
 } from "./types";
 
 const FPS = 60;
@@ -105,86 +110,121 @@ export const movementSystem: ISystem = (world) => {
 
   return { ...world, particles };
 };
-/*
+
 export interface IBounceEvent {
   particle: IParticle;
   collider: IParticle;
 }
 
-export const bounceEventSystem = (event: IBounceEvent): ISystem => (world) => {
-  if (event.collider !== undefined) {
-    const { id, pos, velocity, radius } = event.collider;
+export type CollisionHandler = (event: IBounceEvent) => ISystem;
 
-    const particles = world.particles.map((particle) => {
-      if (
-        id === particle.id &&
-        velocity !== undefined &&
-        radius !== undefined
-      ) {
-        const rect1 = {
-          x: pos.x - radius,
-          y: pos.y - radius,
-          width: radius * 2,
-          height: radius * 2,
-        };
+export const bounceEventSystem: CollisionHandler = (event) => (world) => {
+  if (event.collider) {
+    const colliderPos = getPosition(event.collider);
+    const colliderMovement = getMovement(event.collider);
+    const colliderRadius = getRadius(event.collider);
 
-        const rect2 = {
-          x: event.particle.pos.x,
-          y: event.particle.pos.y,
-          width: event.particle.size?.width || 0,
-          height: event.particle.size?.height || 0,
-        };
+    if (colliderPos && colliderMovement && colliderRadius) {
+      const { id } = event.collider;
+      const { pos } = colliderPos;
+      const { velocity } = colliderMovement;
+      const { radius } = colliderRadius;
 
-        if (rect1.y - velocity.y + rect1.height <= rect2.y) {
-          return {
-            ...particle,
-            pos: { ...pos, y: rect2.y - radius },
-            velocity: { ...velocity, y: velocity.y * -1 },
+      const particles = world.particles.map((particle) => {
+        if (id === particle.id) {
+          const particlePos = getPosition(event.particle);
+          const particleSize = getSize(event.particle);
+
+          const rect1 = {
+            x: pos.x - radius,
+            y: pos.y - radius,
+            width: radius * 2,
+            height: radius * 2,
           };
-        } else if (rect1.y - velocity.y >= rect2.y + rect2.height) {
-          return {
-            ...particle,
-            pos: { ...pos, y: rect2.y + rect2.height + radius },
-            velocity: { ...velocity, y: velocity.y * -1 },
+
+          const rect2 = {
+            x: particlePos?.pos.x || 0,
+            y: particlePos?.pos.y || 0,
+            width: particleSize?.size.width || 0,
+            height: particleSize?.size.height || 0,
           };
-        } else if (rect1.x - velocity.x + rect1.width <= rect2.x) {
-          return {
-            ...particle,
-            pos: { ...pos, x: rect2.x - radius },
-            velocity: { ...velocity, x: velocity.x * -1 },
-          };
-        } else {
-          return {
-            ...particle,
-            pos: { ...pos, x: rect2.x + rect2.width + radius },
-            velocity: { ...velocity, x: velocity.x * -1 },
-          };
+
+          if (rect1.y - velocity.y + rect1.height <= rect2.y) {
+            return {
+              ...particle,
+              components: particle.components.map((comp) => {
+                if (isPosition(comp))
+                  return { pos: { ...pos, y: rect2.y - radius } } as IPosition;
+                else if (isMovement(comp))
+                  return {
+                    velocity: { ...velocity, y: velocity.y * -1 },
+                  } as IMovement;
+                return comp;
+              }),
+            };
+          } else if (rect1.y - velocity.y >= rect2.y + rect2.height) {
+            return {
+              ...particle,
+              components: particle.components.map((comp) => {
+                if (isPosition(comp))
+                  return {
+                    pos: { ...pos, y: rect2.y + rect2.height + radius },
+                  } as IPosition;
+                else if (isMovement(comp))
+                  return {
+                    velocity: { ...velocity, y: velocity.y * -1 },
+                  } as IMovement;
+                return comp;
+              }),
+            };
+          } else if (rect1.x - velocity.x + rect1.width <= rect2.x) {
+            return {
+              ...particle,
+              components: particle.components.map((comp) => {
+                if (isPosition(comp))
+                  return { pos: { ...pos, x: rect2.x - radius } } as IPosition;
+                else if (isMovement(comp))
+                  return {
+                    velocity: { ...velocity, x: velocity.x * -1 },
+                  } as IMovement;
+                return comp;
+              }),
+            };
+          } else {
+            return {
+              ...particle,
+              components: particle.components.map((comp) => {
+                if (isPosition(comp))
+                  return {
+                    pos: { ...pos, x: rect2.x + rect2.width + radius },
+                  } as IPosition;
+                else if (isMovement(comp))
+                  return {
+                    velocity: { ...velocity, x: velocity.x * -1 },
+                  } as IMovement;
+                return comp;
+              }),
+            };
+          }
         }
-      } else return particle;
-    });
-    return { ...world, particles };
+        return particle;
+      });
+      return { ...world, particles };
+    }
+    return world;
   }
-
   return world;
-};
-
-export interface ICollisionEvent {
-  particle: IParticle;
-  collider: IParticle;
-}
-
-export type CollisionHandler = (event: ICollisionEvent) => ISystem;
-
-export const collisionHandler: CollisionHandler = (event) => (world) => {
-  return bounceEventSystem(event)(world);
 };
 
 export const collisionSystem = (handler: CollisionHandler): ISystem => (
   world
 ) => {
   world.particles.forEach((collider) => {
-    if (collider.velocity && collider.radius) {
-      const { pos, radius } = collider;
+    const radiusObj = getRadius(collider);
+    const posObj = getPosition(collider);
+    if (radiusObj && posObj) {
+      const { radius } = radiusObj;
+      const { pos } = posObj;
 
       const rect1 = {
         x: pos.x - radius,
@@ -194,12 +234,21 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
       };
 
       world.particles.forEach((particle) => {
-        if (particle.size) {
+        const particleSize = getSize(particle);
+        const particleRadius = getRadius(particle);
+        const particlePos = getPosition(particle);
+
+        const colliderRadius = getRadius(collider);
+        const colliderPos = getPosition(collider);
+
+        if (particleSize && particlePos) {
+          const { pos } = particlePos;
+          const { size } = particleSize;
           const rect2 = {
-            x: particle.pos.x,
-            y: particle.pos.y,
-            width: particle.size.width,
-            height: particle.size.height,
+            x: pos.x,
+            y: pos.y,
+            width: size.width,
+            height: size.height,
           };
 
           if (
@@ -217,15 +266,17 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
             );
           }
         } else if (
-          particle !== collider &&
-          particle.radius &&
-          collider.radius
+          particle.id !== collider.id &&
+          particleRadius &&
+          colliderRadius &&
+          particlePos &&
+          colliderPos
         ) {
-          const dx = particle.pos.x - collider.pos.x;
-          const dy = particle.pos.y - collider.pos.y;
+          const dx = particlePos.pos.x - colliderPos.pos.x;
+          const dy = particlePos.pos.y - colliderPos.pos.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < particle.radius + collider.radius) {
+          if (distance < particleRadius.radius + colliderRadius.radius) {
             world.queue!.enqueue(
               handler({
                 particle,
@@ -240,4 +291,3 @@ export const collisionSystem = (handler: CollisionHandler): ISystem => (
 
   return world;
 };
-*/

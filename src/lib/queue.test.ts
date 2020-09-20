@@ -1,16 +1,16 @@
 import { createSystemQueue, queueHandler } from "./queue";
 import { worldFactory, particleFactory } from "./engine";
-import { ISystem } from "./types";
+import { ISystem, IPosition, getPosition } from "./types";
 
 const world = worldFactory({
   particles: [
     particleFactory({
       family: "ball1",
-      pos: { x: 10, y: 10 },
+      components: [{ pos: { x: 10, y: 10 } } as IPosition],
     }),
     particleFactory({
       family: "ball2",
-      pos: { x: 20, y: 20 },
+      components: [{ pos: { x: 20, y: 20 } } as IPosition],
     }),
   ],
 });
@@ -21,7 +21,7 @@ const firstEvent: ISystem = (world) => ({
     particle.family === "ball1"
       ? {
           ...particle,
-          pos: { x: 0, y: 0 },
+          components: [{ pos: { x: 0, y: 0 } } as IPosition],
         }
       : particle
   ),
@@ -33,7 +33,7 @@ const secondEvent: ISystem = (world) => ({
     particle.family === "ball2"
       ? {
           ...particle,
-          pos: { x: 0, y: 0 },
+          components: [{ pos: { x: 0, y: 0 } } as IPosition],
         }
       : particle
   ),
@@ -59,7 +59,7 @@ test("first in first out", () => {
   const event = events.dequeue();
   const newWorld = event!(world);
   const ball = newWorld.particles.find((_) => _.family === "ball1");
-  expect(ball?.pos.x).toEqual(0);
+  expect(ball && getPosition(ball)?.pos.x).toEqual(0);
 });
 
 test("dequeue empties queue", () => {
@@ -80,5 +80,5 @@ test("queueHandler calls each system for events", () => {
   expect(world.queue.isEmpty()).toBeTruthy();
 
   const ball = newWorld.particles.find((_) => _.family === "ball1");
-  expect(ball?.pos.x).toEqual(0);
+  expect(ball && getPosition(ball)?.pos.x).toEqual(0);
 });

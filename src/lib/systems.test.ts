@@ -1,22 +1,30 @@
-import { worldFactory, particleFactory, idFactory } from "./engine";
 import {
+  worldFactory,
+  particleFactory,
+  updater,
   movementSystem,
-  // collisionSystem,
-  // collisionHandler,
-  // CollisionHandler,
-  // bounceEventSystem,
-  // updater,
-} from "./systems";
-import { IPosition, IRadius, IMovement, getPosition } from "./types";
+  collisionSystem,
+  bounceEventSystem,
+  CollisionHandler,
+  IPosition,
+  IRadius,
+  IMovement,
+  getPosition,
+  ISize,
+  getMovement,
+} from "./";
 
-test("moves based on velocity", () => {
-  const ball = particleFactory({
+const ballFactory = (x: number, y: number) =>
+  particleFactory({
     components: [
-      { pos: { x: 10, y: 10 } } as IPosition,
+      { pos: { x, y } } as IPosition,
       { radius: 20 } as IRadius,
       { velocity: { x: 5, y: 5 } } as IMovement,
     ],
   });
+
+test("moves based on velocity", () => {
+  const ball = ballFactory(10, 10);
 
   const { particles } = movementSystem(
     worldFactory({
@@ -28,19 +36,17 @@ test("moves based on velocity", () => {
   expect(getPosition(particles[0])?.pos.x).toEqual(15);
   expect(getPosition(particles[0])?.pos.y).toEqual(15);
 });
-/*
+
 test("detects circle bottom collision", () => {
-  const ball = particleFactory({
-    pos: { x: 100, y: 85 },
-    radius: 20,
-    velocity: { x: 5, y: 5 },
-  });
+  const ball = ballFactory(100, 85);
   const wall = particleFactory({
-    pos: { x: 50, y: 100 },
-    size: { width: 100, height: 10 },
+    components: [
+      { pos: { x: 50, y: 100 } } as IPosition,
+      { size: { width: 100, height: 10 } } as ISize,
+    ],
   });
 
-  const world = collisionSystem(collisionHandler)(
+  const world = collisionSystem(bounceEventSystem)(
     worldFactory({
       particles: [ball, wall],
     })
@@ -49,24 +55,26 @@ test("detects circle bottom collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(80);
-  expect(particles[0].velocity?.y).toEqual(-5);
+  expect(getPosition(particles[0])?.pos.y).toEqual(80);
+  expect(getMovement(particles[0])?.velocity.y).toEqual(-5);
 });
 
 test("detects circle top collision", () => {
   const ball = particleFactory({
-    id: idFactory(),
-    pos: { x: 100, y: 25 },
-    radius: 20,
-    velocity: { x: 5, y: -5 },
+    components: [
+      { pos: { x: 100, y: 25 } } as IPosition,
+      { radius: 20 } as IRadius,
+      { velocity: { x: 5, y: -5 } } as IMovement,
+    ],
   });
   const wall = particleFactory({
-    id: idFactory(),
-    pos: { x: 50, y: 0 },
-    size: { width: 100, height: 10 },
+    components: [
+      { pos: { x: 50, y: 0 } } as IPosition,
+      { size: { width: 100, height: 10 } } as ISize,
+    ],
   });
 
-  const world = collisionSystem(collisionHandler)(
+  const world = collisionSystem(bounceEventSystem)(
     worldFactory({
       particles: [ball, wall],
     })
@@ -75,24 +83,26 @@ test("detects circle top collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(30);
-  expect(particles[0].velocity?.y).toEqual(5);
+  expect(getPosition(particles[0])?.pos.y).toEqual(30);
+  expect(getMovement(particles[0])?.velocity.y).toEqual(5);
 });
 
 test("detects circle right collision", () => {
   const ball = particleFactory({
-    id: idFactory(),
-    pos: { x: 85, y: 10 },
-    radius: 20,
-    velocity: { x: 5, y: -5 },
+    components: [
+      { pos: { x: 85, y: 10 } } as IPosition,
+      { radius: 20 } as IRadius,
+      { velocity: { x: 5, y: -5 } } as IMovement,
+    ],
   });
   const wall = particleFactory({
-    id: idFactory(),
-    pos: { x: 100, y: 0 },
-    size: { width: 10, height: 100 },
+    components: [
+      { pos: { x: 100, y: 0 } } as IPosition,
+      { size: { width: 10, height: 100 } } as ISize,
+    ],
   });
 
-  const world = collisionSystem(collisionHandler)(
+  const world = collisionSystem(bounceEventSystem)(
     worldFactory({
       particles: [ball, wall],
     })
@@ -101,25 +111,27 @@ test("detects circle right collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(10);
-  expect(particles[0].pos.x).toEqual(80);
-  expect(particles[0].velocity?.x).toEqual(-5);
+  expect(getPosition(particles[0])?.pos.y).toEqual(10);
+  expect(getPosition(particles[0])?.pos.x).toEqual(80);
+  expect(getMovement(particles[0])?.velocity.x).toEqual(-5);
 });
 
 test("detects circle left collision", () => {
   const ball = particleFactory({
-    id: idFactory(),
-    pos: { x: 25, y: 10 },
-    radius: 20,
-    velocity: { x: 5, y: -5 },
+    components: [
+      { pos: { x: 25, y: 10 } } as IPosition,
+      { radius: 20 } as IRadius,
+      { velocity: { x: 5, y: -5 } } as IMovement,
+    ],
   });
   const wall = particleFactory({
-    id: idFactory(),
-    pos: { x: 0, y: 0 },
-    size: { width: 10, height: 100 },
+    components: [
+      { pos: { x: 0, y: 0 } } as IPosition,
+      { size: { width: 10, height: 100 } } as ISize,
+    ],
   });
 
-  const world = collisionSystem(collisionHandler)(
+  const world = collisionSystem(bounceEventSystem)(
     worldFactory({
       particles: [ball, wall],
     })
@@ -128,22 +140,24 @@ test("detects circle left collision", () => {
   const { particles } = world.queue.dequeue()!(world);
 
   expect(particles.length).toEqual(2);
-  expect(particles[0].pos.y).toEqual(10);
-  expect(particles[0].pos.x).toEqual(30);
-  expect(particles[0].velocity?.x).toEqual(-5);
+  expect(getPosition(particles[0])?.pos.y).toEqual(10);
+  expect(getPosition(particles[0])?.pos.x).toEqual(30);
+  expect(getMovement(particles[0])?.velocity.x).toEqual(-5);
 });
 
 test("publishes events on circle collision", () => {
   const ball = particleFactory({
-    id: idFactory(),
-    pos: { x: 100, y: 85 },
-    radius: 20,
-    velocity: { x: 5, y: 5 },
+    components: [
+      { pos: { x: 100, y: 85 } } as IPosition,
+      { radius: 20 } as IRadius,
+      { velocity: { x: 5, y: 5 } } as IMovement,
+    ],
   });
   const wall = particleFactory({
-    id: idFactory(),
-    pos: { x: 50, y: 100 },
-    size: { width: 100, height: 10 },
+    components: [
+      { pos: { x: 50, y: 100 } } as IPosition,
+      { size: { width: 100, height: 10 } } as ISize,
+    ],
   });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
@@ -164,15 +178,17 @@ test("publishes events on circle collision", () => {
 
 test("publishes collision event after game loop", () => {
   const ball = particleFactory({
-    id: idFactory(),
-    pos: { x: 100, y: 75 },
-    radius: 20,
-    velocity: { x: 5, y: 5 },
+    components: [
+      { pos: { x: 100, y: 75 } } as IPosition,
+      { radius: 20 } as IRadius,
+      { velocity: { x: 5, y: 5 } } as IMovement,
+    ],
   });
   const wall = particleFactory({
-    id: idFactory(),
-    pos: { x: 50, y: 100 },
-    size: { width: 100, height: 10 },
+    components: [
+      { pos: { x: 50, y: 100 } } as IPosition,
+      { size: { width: 100, height: 10 } } as ISize,
+    ],
   });
 
   const collisionHandler: CollisionHandler = (event) => (world) => {
@@ -194,4 +210,3 @@ test("publishes collision event after game loop", () => {
   queue.peek();
   expect(queue.isEmpty()).toBeFalsy();
 });
-*/
