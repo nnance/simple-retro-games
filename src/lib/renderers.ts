@@ -1,4 +1,13 @@
-import { IWorld, ISystem, getColor, getAngle } from "./types";
+import {
+  IWorld,
+  ISystem,
+  getColor,
+  getAngle,
+  getPosition,
+  getRadius,
+  getSize,
+  getPoints,
+} from "./types";
 
 export type RenderSystem = (
   ctx: CanvasRenderingContext2D,
@@ -17,10 +26,13 @@ export const renderer = (
 
 export const circleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((ball) => {
-    if (ball.radius) {
+    const pos = getPosition(ball);
+    const radius = getRadius(ball);
+
+    if (pos && radius) {
       ctx.strokeStyle = "grey";
       ctx.beginPath();
-      ctx.arc(ball.pos.x, ball.pos.y, ball.radius!, 0, Math.PI * 2, true); // Outer circle
+      ctx.arc(pos.pos.x, pos.pos.y, radius.radius!, 0, Math.PI * 2, true); // Outer circle
       ctx.stroke();
     }
   });
@@ -28,25 +40,18 @@ export const circleSystem: RenderSystem = (ctx, world) => {
 
 export const rectangleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((particle) => {
-    if (particle.size) {
+    const pos = getPosition(particle);
+    const size = getSize(particle);
+
+    if (pos && size) {
       const colorComponent = getColor(particle);
 
       if (colorComponent) {
         ctx.fillStyle = colorComponent.color;
-        ctx.fillRect(
-          particle.pos.x,
-          particle.pos.y,
-          particle.size.width,
-          particle.size.height
-        );
+        ctx.fillRect(pos.pos.x, pos.pos.y, size.size.width, size.size.height);
       } else {
         ctx.strokeStyle = "grey";
-        ctx.strokeRect(
-          particle.pos.x,
-          particle.pos.y,
-          particle.size.width,
-          particle.size.height
-        );
+        ctx.strokeRect(pos.pos.x, pos.pos.y, size.size.width, size.size.height);
       }
     }
   });
@@ -111,24 +116,20 @@ export const polygonSystem = (showBounding: boolean): RenderSystem => (
   world
 ) => {
   world.particles.forEach((particle) => {
+    const pos = getPosition(particle);
+    const radius = getRadius(particle);
     const angle = getAngle(particle);
+    const points = getPoints(particle);
 
-    if (particle.points && angle) {
-      const {
-        pos: { x, y },
-        radius = 0,
-        scale,
-        points,
-      } = particle;
-
+    if (pos && radius && points && angle) {
       drawPolygon(
         ctx,
-        x,
-        y,
-        radius,
+        pos.pos.x,
+        pos.pos.y,
+        radius.radius,
         angle.angle,
-        points,
-        scale,
+        points.points,
+        points.scale,
         showBounding,
         "grey"
       );

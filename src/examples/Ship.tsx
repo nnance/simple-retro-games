@@ -15,10 +15,16 @@ import {
   CollisionHandler,
   createSystemQueue,
   queueHandler,
-  ICollisionEvent,
   worldFactory,
   particleFactory,
   IAngle,
+  IPoints,
+  IPosition,
+  IRadius,
+  IMovement,
+  IThrust,
+  isPosition,
+  isThrust,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -109,11 +115,12 @@ const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
   return ASTEROIDS.map((points) =>
     particleFactory({
       family: "asteroid",
-      pos: { x: random(0, width), y: random(0, width) },
-      radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]),
-      scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]),
-      velocity: { x: velocity(), y: velocity() },
-      points,
+      components: [
+        { pos: { x: random(0, width), y: random(0, width) } } as IPosition,
+        { radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]) } as IRadius,
+        { scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]), points } as IPoints,
+        { velocity: { x: velocity(), y: velocity() } } as IMovement,
+      ],
     })
   );
 };
@@ -121,19 +128,23 @@ const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
 const particlesFactory = (size: IRect): IParticle[] => {
   const ship = particleFactory({
     family: "ship",
-    pos: { x: 200, y: 200 },
-    radius: SHIP_SIZE,
-    scale: SHIP_SCALE,
-    velocity: { x: 0, y: 0 },
-    friction: FRICTION,
-    points: [
-      [0, -6],
-      [-3, 3],
-      [0, 1],
-      [3, 3],
-      [0, -6],
+    components: [
+      { pos: { x: 200, y: 200 } } as IPosition,
+      { radius: SHIP_SIZE } as IRadius,
+      { velocity: { x: 0, y: 0 } } as IMovement,
+      { friction: FRICTION } as IThrust,
+      {
+        scale: SHIP_SCALE,
+        points: [
+          [0, -6],
+          [-3, 3],
+          [0, 1],
+          [3, 3],
+          [0, -6],
+        ],
+      } as IPoints,
+      { angle: 0, rotation: 0 } as IAngle,
     ],
-    components: [{ angle: 0, rotation: 0 } as IAngle],
   });
 
   return [ship, ...asteroidFactory(1, size)];
@@ -142,25 +153,31 @@ const particlesFactory = (size: IRect): IParticle[] => {
 const offScreenSystem = (size: IRect): ISystem => (world) => {
   const particles = world.particles.map((particle) => ({
     ...particle,
-    pos: {
-      x:
-        particle.pos.x < 0
-          ? size.width
-          : particle.pos.x > size.width
-          ? 0
-          : particle.pos.x,
-      y:
-        particle.pos.y < 0
-          ? size.height
-          : particle.pos.y > size.height
-          ? 0
-          : particle.pos.y,
-    },
+    components: particle.components.map((component) => {
+      return isPosition(component)
+        ? ({
+            pos: {
+              x:
+                component.pos.x < 0
+                  ? size.width
+                  : component.pos.x > size.width
+                  ? 0
+                  : component.pos.x,
+              y:
+                component.pos.y < 0
+                  ? size.height
+                  : component.pos.y > size.height
+                  ? 0
+                  : component.pos.y,
+            },
+          } as IPosition)
+        : component;
+    }),
   }));
   return { ...world, particles };
 };
 
-const shipCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
+const shipCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
   if (
     event.collider &&
     event.collider.family === "asteroid" &&
@@ -180,13 +197,17 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
   const particles = particlesFactory(size);
   const queue = createSystemQueue();
 
-  const updateShip = (value: Partial<IAngle> | Partial<IParticle>) => () => {
+  const updateShip = (value: Partial<IAngle> | Partial<IThrust>) => () => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
         particle.family === "ship"
           ? {
               ...particle,
-              ...value,
+              components: particle.components.map((component) => {
+                if (isThrust(value) && isThrust(component))
+                  return { ...component, ...value };
+                else return component;
+              }),
             }
           : particle
       );

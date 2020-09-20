@@ -18,6 +18,12 @@ import {
   ISystem,
   worldFactory,
   particleFactory,
+  IPosition,
+  ISize,
+  IRadius,
+  IMovement,
+  isMovement,
+  getMovement,
 } from "../lib";
 import { useColSize } from "../Layout";
 import { GameProvider } from "../lib/state";
@@ -47,8 +53,10 @@ const particlesFactory = ({ width, height }: IRect): IParticle[] => {
     return Array.from(Array(COLS), (_, col) =>
       particleFactory({
         family: "brick",
-        pos: { x: x + width * col, y: y + row * height },
-        size: { width, height },
+        components: [
+          { pos: { x: x + width * col, y: y + row * height } } as IPosition,
+          { size: { width, height } } as ISize,
+        ],
       })
     );
   }).flat();
@@ -56,34 +64,46 @@ const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   return [
     particleFactory({
       family: "ball",
-      pos: { x: 30, y: 100 },
-      radius: 5,
-      velocity: { x: 3, y: 3 },
+      components: [
+        { pos: { x: 30, y: 100 } } as IPosition,
+        { radius: 5 } as IRadius,
+        { velocity: { x: 3, y: 3 } } as IMovement,
+      ],
     }),
     particleFactory({
       family: "floor",
-      pos: { x: 0, y: height },
-      size: { width, height: 10 },
+      components: [
+        { pos: { x: 0, y: height } } as IPosition,
+        { size: { width, height: 10 } } as ISize,
+      ],
     }),
     particleFactory({
       family: "rightWall",
-      pos: { x: width, y: 0 },
-      size: { width: 10, height },
+      components: [
+        { pos: { x: width, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
     }),
     particleFactory({
       family: "top",
-      pos: { x: 0, y: -10 },
-      size: { width, height: 10 },
+      components: [
+        { pos: { x: 0, y: -10 } } as IPosition,
+        { size: { width, height: 10 } } as ISize,
+      ],
     }),
     particleFactory({
       family: "leftWall",
-      pos: { x: -10, y: 0 },
-      size: { width: 10, height },
+      components: [
+        { pos: { x: -10, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
     }),
     particleFactory({
       family: "paddle",
-      pos: { x: 400, y: height - 100 },
-      size: { width: 60, height: 10 },
+      components: [
+        { pos: { x: 400, y: height - 100 } } as IPosition,
+        { size: { width: 60, height: 10 } } as ISize,
+      ],
     }),
     ...bricks,
   ];
@@ -97,7 +117,19 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
         particle.family === "paddle"
-          ? { ...particle, velocity: { x, y: 0 } }
+          ? {
+              ...particle,
+              components: getMovement(particle)
+                ? particle.components.map((comp) => {
+                    return isMovement(comp)
+                      ? ({ velocity: { x, y: 0 } } as IMovement)
+                      : comp;
+                  })
+                : [
+                    ...particle.components,
+                    { velocity: { x, y: 0 } } as IMovement,
+                  ],
+            }
           : particle
       );
 

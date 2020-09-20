@@ -16,7 +16,6 @@ export const worldFactory = (world: Partial<IWorld>): IWorld => ({
 export const particleFactory = (particle: Partial<IParticle>): IParticle => ({
   id: idFactory(),
   components: [],
-  pos: { x: 0, y: 0 },
   ...particle,
 });
 

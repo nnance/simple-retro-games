@@ -8,12 +8,16 @@ import {
   gameLoop,
   circleSystem,
   IRect,
-  collisionHandler,
+  bounceEventSystem,
   queueHandler,
   worldFactory,
   gameControls,
   createSystemQueue,
   particleFactory,
+  IPosition,
+  IRadius,
+  IMovement,
+  ISize,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -21,25 +25,35 @@ const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   return [
     particleFactory({
       family: "ball",
-      pos: { x: 30, y: 30 },
-      radius: 20,
-      velocity: { x: 3, y: 3 },
+      components: [
+        { pos: { x: 30, y: 30 } } as IPosition,
+        { radius: 20 } as IRadius,
+        { velocity: { x: 3, y: 3 } } as IMovement,
+      ],
     }),
     particleFactory({
-      pos: { x: 0, y: height },
-      size: { width, height: 10 },
+      components: [
+        { pos: { x: 0, y: height } } as IPosition,
+        { size: { width, height: 10 } } as ISize,
+      ],
     }),
     particleFactory({
-      pos: { x: width, y: 0 },
-      size: { width: 10, height },
+      components: [
+        { pos: { x: width, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
     }),
     particleFactory({
-      pos: { x: 0, y: -10 },
-      size: { width, height: 10 },
+      components: [
+        { pos: { x: 0, y: -10 } } as IPosition,
+        { size: { width, height: 10 } } as ISize,
+      ],
     }),
     particleFactory({
-      pos: { x: -10, y: 0 },
-      size: { width: 10, height },
+      components: [
+        { pos: { x: -10, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
     }),
   ];
 };
@@ -50,7 +64,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
 
   const update = updater([
     movementSystem,
-    collisionSystem(collisionHandler),
+    collisionSystem(bounceEventSystem),
     queueHandler,
     renderer(ctx, [circleSystem]),
   ]);

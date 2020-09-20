@@ -13,11 +13,18 @@ import {
   CollisionHandler,
   queueHandler,
   worldFactory,
-  ICollisionEvent,
   ISystem,
   particleFactory,
   getColor,
   IColor,
+  IPosition,
+  ISize,
+  getPosition,
+  getSize,
+  getRadius,
+  IRadius,
+  IMovement,
+  isMovement,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -61,20 +68,16 @@ const brickGap = 2;
 const brickSize = { width: 25, height: 12 };
 
 const Brick = (particle: IParticle) => {
-  const { pos, size } = particle;
-  const comp = getColor(particle);
+  const pos = getPosition(particle);
+  const size = getSize(particle);
+  const color = getColor(particle) || { color: "grey" };
 
-  return (
-    <rect
-      {...pos}
-      {...size}
-      stroke={comp!.color || "grey"}
-      fill={comp!.color || "none"}
-    />
-  );
+  return pos && size && color ? (
+    <rect {...pos.pos} {...size.size} stroke={color.color} fill={color.color} />
+  ) : null;
 };
 
-const getBricks = (): IParticle[] => {
+const getBricks = (x = 190, y = 0): IParticle[] => {
   const bricks: IParticle[] = [];
 
   // create the level by looping over each row and column in the level1 array
@@ -84,17 +87,21 @@ const getBricks = (): IParticle[] => {
       const colorCode = level1[row][col];
       const { width, height } = brickSize;
 
-      const components = [{ color: colorMap[colorCode] } as IColor];
+      const components = [
+        {
+          pos: {
+            x: x + wallSize + (width + brickGap) * col,
+            y: y + wallSize + (height + brickGap) * row,
+          },
+        } as IPosition,
+        { size: brickSize } as ISize,
+        { color: colorMap[colorCode] } as IColor,
+      ];
 
       bricks.push(
         particleFactory({
           family: "brick",
-          pos: {
-            x: wallSize + (width + brickGap) * col,
-            y: wallSize + (height + brickGap) * row,
-          },
           components,
-          size: brickSize,
         })
       );
     }
@@ -102,7 +109,7 @@ const getBricks = (): IParticle[] => {
   return bricks;
 };
 
-const brickCollisionSystem = (event: ICollisionEvent): ISystem => (world) => {
+const brickCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
   if (event.collider && event.particle.family === "brick") {
     const particles = world.particles.reduce((prev, particle) => {
       const hit = event.particle.id === particle.id;
@@ -129,14 +136,17 @@ const Grid = () => {
 const Ball = () => {
   const [{ particles }] = useGameContext();
   const ball = particles.find((_) => _.family === "ball");
+  const radius = getRadius(ball!);
+  const pos = getPosition(ball!);
+  const color = getColor(ball!) || { color: "grey" };
 
-  return ball ? (
+  return ball && radius && pos ? (
     <circle
-      r={ball.radius}
-      cx={ball.pos.x}
-      cy={ball.pos.y}
-      stroke="grey"
-      fill="none"
+      r={radius.radius}
+      cx={pos.pos.x}
+      cy={pos.pos.y}
+      stroke={color.color}
+      fill={color.color}
     />
   ) : null;
 };
@@ -144,12 +154,21 @@ const Ball = () => {
 const Paddle = () => {
   const [{ particles, queue }] = useGameContext();
   const paddle = particles.find((_) => _.family === "paddle");
+  const pos = getPosition(paddle!);
+  const size = getSize(paddle!);
 
   const paddleEvent = (x: number) => () => {
     queue.enqueue((world) => {
       const particles = world.particles.map((particle) =>
         particle.family === "paddle"
-          ? { ...particle, velocity: { x, y: 0 } }
+          ? {
+              ...particle,
+              components: particle.components.map((comp) => {
+                return isMovement(comp)
+                  ? ({ velocity: { x, y: 0 } } as IMovement)
+                  : comp;
+              }),
+            }
           : particle
       );
 
@@ -165,7 +184,9 @@ const Paddle = () => {
       queue.enqueue((world) => ({ ...world, paused: !world.paused })),
   });
 
-  return paddle ? <rect {...paddle.pos} {...paddle.size} fill="cyan" /> : null;
+  return paddle && pos && size ? (
+    <rect {...pos.pos} {...size.size} fill="cyan" />
+  ) : null;
 };
 
 const collisionHandler: CollisionHandler = (event) => (world) => {
@@ -222,29 +243,41 @@ const particlesFactory = ({ width, height }: IRect): IParticle[] => {
   return [
     particleFactory({
       family: "ball",
-      pos: { x: 30, y: 100 },
-      radius: 5,
-      velocity: { x: 3, y: 3 },
+      components: [
+        { pos: { x: 30, y: 100 } } as IPosition,
+        { radius: 5 } as IRadius,
+        { velocity: { x: 3, y: 3 } } as IMovement,
+        { color: "grey" } as IColor,
+      ],
     }),
     particleFactory({
       family: "rightWall",
-      pos: { x: width, y: 0 },
-      size: { width: 10, height },
+      components: [
+        { pos: { x: width, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
     }),
     particleFactory({
       family: "top",
-      pos: { x: 0, y: -10 },
-      size: { width, height: 10 },
+      components: [
+        { pos: { x: 0, y: -10 } } as IPosition,
+        { size: { width, height: 10 } } as ISize,
+      ],
     }),
     particleFactory({
       family: "leftWall",
-      pos: { x: -10, y: 0 },
-      size: { width: 10, height },
+      components: [
+        { pos: { x: -10, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
     }),
     particleFactory({
       family: "paddle",
-      pos: { x: width / 2 - brickSize.width / 2, y: 500 },
-      size: brickSize,
+      components: [
+        { pos: { x: 400, y: height - 100 } } as IPosition,
+        { size: { width: 60, height: 10 } } as ISize,
+        { velocity: { x: 0, y: 0 } } as IMovement,
+      ],
     }),
     ...bricks,
   ];

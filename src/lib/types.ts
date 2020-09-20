@@ -27,7 +27,7 @@ export function isRadius(component: IComponent): component is IRadius {
 }
 
 export function getRadius(particle: IParticle) {
-  return particle.components.find((_) => isRadius(_)) as IRadius | undefined;
+  return particle?.components.find((_) => isRadius(_)) as IRadius | undefined;
 }
 
 export interface IPoints extends IComponent {
@@ -40,7 +40,7 @@ export function isPoints(component: IComponent): component is IPoints {
 }
 
 export function getPoints(particle: IParticle) {
-  return particle.components.find((_) => isPoints(_)) as IPoints | undefined;
+  return particle?.components.find((_) => isPoints(_)) as IPoints | undefined;
 }
 
 export interface ISize extends IComponent {
@@ -52,7 +52,7 @@ export function isSize(component: IComponent): component is ISize {
 }
 
 export function getSize(particle: IParticle) {
-  return particle.components.find((_) => isSize(_)) as ISize | undefined;
+  return particle?.components.find((_) => isSize(_)) as ISize | undefined;
 }
 
 export interface IMovement extends IComponent {
@@ -64,7 +64,7 @@ export function isMovement(component: IComponent): component is IMovement {
 }
 
 export function getMovement(particle: IParticle) {
-  return particle.components.find((_) => isMovement(_)) as
+  return particle?.components.find((_) => isMovement(_)) as
     | IMovement
     | undefined;
 }
@@ -79,7 +79,7 @@ export function isThrust(component: IComponent): component is IThrust {
 }
 
 export function getThrust(particle: IParticle) {
-  return particle.components.find((_) => isThrust(_)) as IThrust | undefined;
+  return particle?.components.find((_) => isThrust(_)) as IThrust | undefined;
 }
 
 export interface IColor extends IComponent {
@@ -91,7 +91,7 @@ export function isColor(component: IComponent): component is IColor {
 }
 
 export function getColor(particle: IParticle) {
-  return particle.components.find((_) => isColor(_)) as IColor | undefined;
+  return particle?.components.find((_) => isColor(_)) as IColor | undefined;
 }
 
 export interface IAngle extends IComponent {
@@ -104,7 +104,7 @@ export function isAngle(component: IComponent): component is IAngle {
 }
 
 export function getAngle(particle: IParticle) {
-  return particle.components.find((_) => isAngle(_)) as IAngle | undefined;
+  return particle?.components.find((_) => isAngle(_)) as IAngle | undefined;
 }
 
 export interface IPosition extends IComponent {
@@ -116,7 +116,7 @@ export function isPosition(component: IComponent): component is IPosition {
 }
 
 export function getPosition(particle: IParticle) {
-  return particle.components.find((_) => isPosition(_)) as
+  return particle?.components.find((_) => isPosition(_)) as
     | IPosition
     | undefined;
 }
