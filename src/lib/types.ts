@@ -100,7 +100,8 @@ export interface IAngle extends IComponent {
 }
 
 export function isAngle(component: IComponent): component is IAngle {
-  return (component as IAngle).angle !== undefined;
+  const check = component as IAngle;
+  return check.angle !== undefined || check.rotation !== undefined;
 }
 
 export function getAngle(particle: IParticle) {

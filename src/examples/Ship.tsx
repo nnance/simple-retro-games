@@ -25,6 +25,7 @@ import {
   IThrust,
   isPosition,
   isThrust,
+  isAngle,
 } from "../lib";
 import { useColSize } from "../Layout";
 
@@ -120,6 +121,7 @@ const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
         { radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]) } as IRadius,
         { scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]), points } as IPoints,
         { velocity: { x: velocity(), y: velocity() } } as IMovement,
+        { angle: 0, rotation: 0 } as IAngle,
       ],
     })
   );
@@ -132,7 +134,7 @@ const particlesFactory = (size: IRect): IParticle[] => {
       { pos: { x: 200, y: 200 } } as IPosition,
       { radius: SHIP_SIZE } as IRadius,
       { velocity: { x: 0, y: 0 } } as IMovement,
-      { friction: FRICTION } as IThrust,
+      { friction: FRICTION, thrust: 0 } as IThrust,
       {
         scale: SHIP_SCALE,
         points: [
@@ -146,8 +148,9 @@ const particlesFactory = (size: IRect): IParticle[] => {
       { angle: 0, rotation: 0 } as IAngle,
     ],
   });
+  const belt = asteroidFactory(1, size);
 
-  return [ship, ...asteroidFactory(1, size)];
+  return [ship, ...belt];
 };
 
 const offScreenSystem = (size: IRect): ISystem => (world) => {
@@ -204,9 +207,12 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
           ? {
               ...particle,
               components: particle.components.map((component) => {
-                if (isThrust(value) && isThrust(component))
+                if (isThrust(value) && isThrust(component)) {
                   return { ...component, ...value };
-                else return component;
+                } else if (isAngle(value) && isAngle(component)) {
+                  return { ...component, ...value };
+                }
+                return component;
               }),
             }
           : particle
@@ -215,7 +221,7 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     });
   };
 
-  gameControls({
+  const cancelControls = gameControls({
     leftArrow: updateShip({ rotation: ((TURN_SPEED / 180) * Math.PI) / FPS }),
     rightArrow: updateShip({ rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS }),
     upArrow: updateShip({ thrust: SHIP_THRUST }),
@@ -242,7 +248,15 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
     renderer(ctx, [polygonSystem(SHOW_BOUNDING)]),
   ]);
 
-  gameLoop(update, worldFactory({ paused: true, particles, queue }));
+  const cancelLoop = gameLoop(
+    update,
+    worldFactory({ paused: false, particles, queue })
+  );
+
+  return () => {
+    cancelControls();
+    cancelLoop();
+  };
 };
 
 const Ship = () => {
