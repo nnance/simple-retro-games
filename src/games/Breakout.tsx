@@ -26,7 +26,7 @@ import {
   IMovement,
   isMovement,
 } from "../lib";
-import { useColSize } from "../Layout";
+import { ColumnLayout, useColSize } from "../Layout";
 
 type ColorCode = "R" | "O" | "G" | "Y";
 
@@ -65,7 +65,7 @@ const colorMap = {
 // use a 2px gap between each brick
 const brickGap = 2;
 
-const brickSize = { width: 25, height: 12 };
+const brickSize = { width: 31, height: 12 };
 
 const Brick = (particle: IParticle) => {
   const pos = getPosition(particle);
@@ -77,7 +77,7 @@ const Brick = (particle: IParticle) => {
   ) : null;
 };
 
-const getBricks = (x = 190, y = 0): IParticle[] => {
+const getBricks = (x = 0, y = 0): IParticle[] => {
   const bricks: IParticle[] = [];
 
   // create the level by looping over each row and column in the level1 array
@@ -107,6 +107,52 @@ const getBricks = (x = 190, y = 0): IParticle[] => {
     }
   }
   return bricks;
+};
+
+const particlesFactory = ({ width, height }: IRect): IParticle[] => {
+  const bricks = getBricks().flat();
+
+  return [
+    particleFactory({
+      family: "ball",
+      components: [
+        { pos: { x: 30, y: height - 400 } } as IPosition,
+        { radius: 5 } as IRadius,
+        { velocity: { x: 3, y: 3 } } as IMovement,
+        { color: "grey" } as IColor,
+      ],
+    }),
+    particleFactory({
+      family: "rightWall",
+      components: [
+        { pos: { x: width, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
+    }),
+    particleFactory({
+      family: "top",
+      components: [
+        { pos: { x: 0, y: -10 } } as IPosition,
+        { size: { width, height: 10 } } as ISize,
+      ],
+    }),
+    particleFactory({
+      family: "leftWall",
+      components: [
+        { pos: { x: -10, y: 0 } } as IPosition,
+        { size: { width: 10, height } } as ISize,
+      ],
+    }),
+    particleFactory({
+      family: "paddle",
+      components: [
+        { pos: { x: (width - 40) / 2, y: height - 100 } } as IPosition,
+        { size: { width: 40, height: 10 } } as ISize,
+        { velocity: { x: 0, y: 0 } } as IMovement,
+      ],
+    }),
+    ...bricks,
+  ];
 };
 
 const brickCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
@@ -200,7 +246,8 @@ const update = updater([
   queueHandler,
 ]);
 
-const Board = (props: React.PropsWithChildren<IRect>) => {
+const Board = (props: React.PropsWithChildren<{}>) => {
+  const [size] = useColSize();
   const [, setGameState] = useGameContext();
 
   const gameLoop = React.useCallback(() => {
@@ -211,7 +258,7 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   }, [setGameState]);
 
   React.useEffect(() => {
-    const { width, height } = props;
+    const { width, height } = size;
     const particles = particlesFactory({ width, height });
 
     setGameState(
@@ -220,15 +267,15 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
         particles,
       })
     );
-  }, [props, setGameState]);
+  }, [size, setGameState]);
 
   useAnimationFrame(gameLoop);
 
   return (
     <svg
-      {...props}
+      {...size}
       style={{ background: "black", width: "100%", height: "100%" }}
-      viewBox={`0 0 ${props.width} ${props.height}`}
+      viewBox={`0 0 ${size.width} ${size.height}`}
     >
       <Ball />
       <Paddle />
@@ -237,58 +284,12 @@ const Board = (props: React.PropsWithChildren<IRect>) => {
   );
 };
 
-const particlesFactory = ({ width, height }: IRect): IParticle[] => {
-  const bricks = getBricks().flat();
-
-  return [
-    particleFactory({
-      family: "ball",
-      components: [
-        { pos: { x: 30, y: 100 } } as IPosition,
-        { radius: 5 } as IRadius,
-        { velocity: { x: 3, y: 3 } } as IMovement,
-        { color: "grey" } as IColor,
-      ],
-    }),
-    particleFactory({
-      family: "rightWall",
-      components: [
-        { pos: { x: width, y: 0 } } as IPosition,
-        { size: { width: 10, height } } as ISize,
-      ],
-    }),
-    particleFactory({
-      family: "top",
-      components: [
-        { pos: { x: 0, y: -10 } } as IPosition,
-        { size: { width, height: 10 } } as ISize,
-      ],
-    }),
-    particleFactory({
-      family: "leftWall",
-      components: [
-        { pos: { x: -10, y: 0 } } as IPosition,
-        { size: { width: 10, height } } as ISize,
-      ],
-    }),
-    particleFactory({
-      family: "paddle",
-      components: [
-        { pos: { x: 400, y: height - 100 } } as IPosition,
-        { size: { width: 60, height: 10 } } as ISize,
-        { velocity: { x: 0, y: 0 } } as IMovement,
-      ],
-    }),
-    ...bricks,
-  ];
-};
-
 const Breakout = () => {
-  const [size] = useColSize();
-
   return (
     <GameProvider>
-      <Board {...size} />
+      <ColumnLayout width={4}>
+        <Board />
+      </ColumnLayout>
     </GameProvider>
   );
 };

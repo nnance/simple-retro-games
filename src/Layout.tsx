@@ -45,7 +45,10 @@ export function useColSize() {
   return React.useContext(ColSizeContext);
 }
 
-export function FullHeightCol({ children }: React.PropsWithChildren<{}>) {
+export function FullHeightCol({
+  children,
+  width,
+}: React.PropsWithChildren<{ width?: number }>) {
   const colRef = React.useRef<HTMLDivElement>(null);
   const [, setSizeState] = React.useContext(ColSizeContext);
   const windowHeight = useResize();
@@ -62,7 +65,7 @@ export function FullHeightCol({ children }: React.PropsWithChildren<{}>) {
   return (
     <Col
       ref={colRef}
-      md={9}
+      md={width || 9}
       style={{
         height: "100%",
         paddingTop: "15px",
@@ -74,11 +77,14 @@ export function FullHeightCol({ children }: React.PropsWithChildren<{}>) {
   );
 }
 
-export function ColumnLayout({ children }: React.PropsWithChildren<{}>) {
+export function ColumnLayout({
+  children,
+  ...props
+}: React.PropsWithChildren<{ width?: number }>) {
   return (
     <ColSizeContext.Provider value={React.useState<IRect>(DEFAULT_SIZE)}>
       <Col></Col>
-      <FullHeightCol>{children}</FullHeightCol>
+      <FullHeightCol {...props}>{children}</FullHeightCol>
       <Col></Col>
     </ColSizeContext.Provider>
   );
