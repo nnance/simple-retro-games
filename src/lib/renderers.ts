@@ -28,8 +28,9 @@ export const circleSystem: RenderSystem = (ctx, world) => {
   world.particles.forEach((ball) => {
     const pos = getPosition(ball);
     const radius = getRadius(ball);
+    const points = getPoints(ball);
 
-    if (pos && radius) {
+    if (pos && radius && !points) {
       ctx.strokeStyle = "grey";
       ctx.beginPath();
       ctx.arc(pos.pos.x, pos.pos.y, radius.radius!, 0, Math.PI * 2, true); // Outer circle

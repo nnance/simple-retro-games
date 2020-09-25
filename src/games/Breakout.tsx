@@ -246,7 +246,7 @@ const update = updater([
   queueHandler,
 ]);
 
-const Board = (props: React.PropsWithChildren<{}>) => {
+const Board = () => {
   const [size] = useColSize();
   const [, setGameState] = useGameContext();
 

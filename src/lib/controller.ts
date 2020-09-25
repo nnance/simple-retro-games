@@ -8,6 +8,7 @@ export type GameControls = {
   downArrow?: () => void;
   pause?: () => void;
   keyUp?: (keyCode?: number) => void;
+  multipleKeys?: boolean;
 };
 
 export enum KeyCode {
@@ -68,19 +69,18 @@ export const useGameControls = (actions: GameControls): void => {
 
   const downHandler = React.useCallback(
     (e: KeyboardEvent): void => {
-      if (!actions.keyUp) {
-        handler(e);
-      } else if (state === 0) {
-        handler(e);
-      }
+      if (actions.multipleKeys || state === 0) handler(e);
     },
     [handler, actions, state]
   );
 
-  const upHandler = React.useCallback((): void => {
-    if (actions.keyUp) actions.keyUp();
-    setState(0);
-  }, [actions, setState]);
+  const upHandler = React.useCallback(
+    ({ keyCode }: KeyboardEvent): void => {
+      if (actions.keyUp) actions.keyUp(keyCode);
+      setState(0);
+    },
+    [actions, setState]
+  );
 
   React.useEffect(() => {
     window.addEventListener("keydown", downHandler);

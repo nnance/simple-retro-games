@@ -8,11 +8,8 @@ import {
   polygonSystem,
   gameControls,
   KeyCode,
-  random,
   IRect,
   ISystem,
-  collisionSystem,
-  CollisionHandler,
   createSystemQueue,
   queueHandler,
   worldFactory,
@@ -33,101 +30,11 @@ const FPS = 60;
 const SHOW_BOUNDING = false;
 const SHIP_SIZE = 10;
 const SHIP_SCALE = 3;
-const ASTEROIDS_SIZE = [40, 20, 10]; // size in pixel per stage
-const ASTEROIDS_SCALE = [10, 5, 2]; // size in pixel per stage
-const ASTEROIDS_SPEED = 3; // max starting speed in pixels per sec
 const TURN_SPEED = 180; // deg per second
 const SHIP_THRUST = 5; // acceleration of the ship in pixels per sec
 const FRICTION = 0.7; // friction coefficient of space. (0 = no friction, 1 = full friction)
-const ASTEROIDS = [
-  [
-    [-4, -2],
-    [-2, -4],
-    [0, -2],
-    [2, -4],
-    [4, -2],
-    [3, 0],
-    [4, 2],
-    [1, 4],
-    [-2, 4],
-    [-4, 2],
-    [-4, -2],
-  ],
-  [
-    [-3, 0],
-    [-4, -2],
-    [-2, -4],
-    [0, -3],
-    [2, -4],
-    [4, -2],
-    [2, -1],
-    [4, 1],
-    [2, 4],
-    [-1, 3],
-    [-2, 4],
-    [-4, 2],
-    [-3, 0],
-  ],
-  [
-    [-2, 0],
-    [-4, -1],
-    [-1, -4],
-    [2, -4],
-    [4, -1],
-    [4, 1],
-    [2, 4],
-    [0, 4],
-    [0, 1],
-    [-2, 4],
-    [-4, 1],
-    [-2, 0],
-  ],
-  [
-    [-1, -2],
-    [-2, -4],
-    [1, -4],
-    [4, -2],
-    [4, -1],
-    [1, 0],
-    [4, 2],
-    [2, 4],
-    [1, 3],
-    [-2, 4],
-    [-4, 1],
-    [-4, -2],
-    [-1, -2],
-  ],
-  [
-    [-4, -2],
-    [-2, -4],
-    [2, -4],
-    [4, -2],
-    [4, 2],
-    [2, 4],
-    [-2, 4],
-    [-4, 2],
-    [-4, -2],
-  ],
-] as [number, number][][];
 
-const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
-  const velocity = () => random(ASTEROIDS_SPEED * -1, ASTEROIDS_SPEED);
-
-  return ASTEROIDS.map((points) =>
-    particleFactory({
-      family: "asteroid",
-      components: [
-        { pos: { x: random(0, width), y: random(0, width) } } as IPosition,
-        { radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]) } as IRadius,
-        { scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]), points } as IPoints,
-        { velocity: { x: velocity(), y: velocity() } } as IMovement,
-        { angle: 0, rotation: 0 } as IAngle,
-      ],
-    })
-  );
-};
-
-const particlesFactory = (size: IRect): IParticle[] => {
+const particlesFactory = (): IParticle[] => {
   const ship = particleFactory({
     family: "ship",
     components: [
@@ -148,9 +55,7 @@ const particlesFactory = (size: IRect): IParticle[] => {
       { angle: 0, rotation: 0 } as IAngle,
     ],
   });
-  const belt = asteroidFactory(1, size);
-
-  return [ship, ...belt];
+  return [ship];
 };
 
 const offScreenSystem = (size: IRect): ISystem => (world) => {
@@ -180,24 +85,8 @@ const offScreenSystem = (size: IRect): ISystem => (world) => {
   return { ...world, particles };
 };
 
-const shipCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
-  if (
-    event.collider &&
-    event.collider.family === "asteroid" &&
-    event.particle.family === "ship"
-  ) {
-    const particles = world.particles.reduce((prev, particle) => {
-      const hit = event.collider?.id === particle.id;
-      return hit ? prev : [...prev, particle];
-    }, [] as IParticle[]);
-
-    return { ...world, particles };
-  }
-  return world;
-};
-
 const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
-  const particles = particlesFactory(size);
+  const particles = particlesFactory();
   const queue = createSystemQueue();
 
   const updateShip = (value: Partial<IAngle> | Partial<IThrust>) => () => {
@@ -236,13 +125,8 @@ const startGame = (ctx: CanvasRenderingContext2D, size: IRect) => {
       queue.enqueue((world) => ({ ...world, paused: !world.paused })),
   });
 
-  const collisionHandler: CollisionHandler = (event) => (world) => {
-    return shipCollisionSystem(event)(world);
-  };
-
   const update = updater([
     movementSystem,
-    collisionSystem(collisionHandler),
     queueHandler,
     offScreenSystem(size),
     renderer(ctx, [polygonSystem(SHOW_BOUNDING)]),
