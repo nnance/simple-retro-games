@@ -30,6 +30,11 @@ import {
   getPosition,
   getAngle,
   circleSystem,
+  ISystemQueue,
+  getMovement,
+  IComponent,
+  randomInt,
+  IPoint,
 } from "../lib";
 import { ColumnLayout, useColSize } from "../Layout";
 
@@ -114,25 +119,45 @@ const ASTEROIDS = [
   ],
 ] as [number, number][][];
 
-const asteroidFactory = (stage: number, { width }: IRect): IParticle[] => {
-  const velocity = () => random(ASTEROIDS_SPEED * -1, ASTEROIDS_SPEED);
+interface IAsteroid extends IComponent {
+  stage: number;
+}
 
+function isAsteroid(component: IComponent): component is IAsteroid {
+  return (component as IAsteroid).stage !== undefined;
+}
+
+function getAsteroid(particle: IParticle) {
+  return particle?.components.find((_) => isAsteroid(_)) as
+    | IAsteroid
+    | undefined;
+}
+
+const asteroidFactory = (stage: number, pos: IPoint) => {
+  const velocity = () => random(ASTEROIDS_SPEED * -1, ASTEROIDS_SPEED);
+  const points = ASTEROIDS[randomInt(0, ASTEROIDS.length - 1)];
+
+  return particleFactory({
+    family: "asteroid",
+    components: [
+      { pos } as IPosition,
+      { radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]) } as IRadius,
+      { scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]), points } as IPoints,
+      { velocity: { x: velocity(), y: velocity() } } as IMovement,
+      { angle: 0, rotation: 0 } as IAngle,
+      { stage } as IAsteroid,
+    ],
+  });
+};
+
+const asteroidBeltFactory = (stage: number, { width }: IRect): IParticle[] => {
   return ASTEROIDS.map((points) =>
-    particleFactory({
-      family: "asteroid",
-      components: [
-        { pos: { x: random(0, width), y: random(0, width) } } as IPosition,
-        { radius: Math.ceil(ASTEROIDS_SIZE[stage - 1]) } as IRadius,
-        { scale: Math.ceil(ASTEROIDS_SCALE[stage - 1]), points } as IPoints,
-        { velocity: { x: velocity(), y: velocity() } } as IMovement,
-        { angle: 0, rotation: 0 } as IAngle,
-      ],
-    })
+    asteroidFactory(stage, { x: randomInt(0, width), y: randomInt(0, width) })
   );
 };
 
-const particlesFactory = (size: IRect): IParticle[] => {
-  const ship = particleFactory({
+const shipFactory = () =>
+  particleFactory({
     family: "ship",
     components: [
       { pos: { x: 200, y: 200 } } as IPosition,
@@ -152,8 +177,10 @@ const particlesFactory = (size: IRect): IParticle[] => {
       { angle: 0, rotation: 0 } as IAngle,
     ],
   });
-  const belt = asteroidFactory(1, size);
 
+const particlesFactory = (size: IRect): IParticle[] => {
+  const ship = shipFactory();
+  const belt = asteroidBeltFactory(1, size);
   return [ship, ...belt];
 };
 
@@ -199,6 +226,38 @@ const offScreenSystem = (size: IRect): ISystem => (world) => {
   return { ...world, particles };
 };
 
+const asteroidExplosion = (particle: IParticle) => {
+  const pos = getPosition(particle);
+  const angle = getPosition(particle);
+  const velocity = getMovement(particle);
+  const asteroid = getAsteroid(particle);
+  if (pos && asteroid && angle && velocity) {
+    return [asteroidFactory(asteroid.stage + 1, pos.pos)];
+  }
+  return [];
+};
+
+const missileCollisionSystem: CollisionHandler = (event): ISystem => (
+  world
+) => {
+  if (
+    event.collider &&
+    event.collider.family === "asteroid" &&
+    event.particle.family === "missile"
+  ) {
+    const particles = world.particles.reduce((prev, particle) => {
+      const { id } = particle;
+      const hit = event.collider?.id === id || event.particle?.id === id;
+      return hit
+        ? [...prev, ...asteroidExplosion(event.collider)]
+        : [...prev, particle];
+    }, [] as IParticle[]);
+
+    return { ...world, particles };
+  }
+  return world;
+};
+
 const shipCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
   if (
     event.collider &&
@@ -206,7 +265,7 @@ const shipCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
     event.particle.family === "ship"
   ) {
     const particles = world.particles.reduce((prev, particle) => {
-      const hit = event.collider?.id === particle.id;
+      const hit = event.particle?.id === particle.id;
       return hit ? prev : [...prev, particle];
     }, [] as IParticle[]);
 
@@ -215,8 +274,89 @@ const shipCollisionSystem: CollisionHandler = (event): ISystem => (world) => {
   return world;
 };
 
+const updateShip = (queue: ISystemQueue) => (
+  value: Partial<IAngle> | Partial<IThrust>
+) => {
+  queue.enqueue((world) => {
+    const particles = world.particles.map((particle) =>
+      particle.family === "ship"
+        ? {
+            ...particle,
+            components: particle.components.map((component) => {
+              if (isThrust(value) && isThrust(component)) {
+                return { ...component, ...value };
+              } else if (isAngle(value) && isAngle(component)) {
+                return { ...component, ...value };
+              }
+              return component;
+            }),
+          }
+        : particle
+    );
+    return { ...world, particles };
+  });
+};
+
+const rotateLeft = (queue: ISystemQueue) => {
+  const updater = updateShip(queue);
+  return () => updater({ rotation: ((TURN_SPEED / 180) * Math.PI) / FPS });
+};
+
+const rotateRight = (queue: ISystemQueue) => {
+  const updater = updateShip(queue);
+  return () => updater({ rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS });
+};
+
+const thrustForward = (queue: ISystemQueue) => {
+  const updater = updateShip(queue);
+  return () => updater({ thrust: SHIP_THRUST });
+};
+
+const stopMovement = (queue: ISystemQueue) => {
+  const updater = updateShip(queue);
+  return (keyCode = 0) => {
+    if ([KeyCode.leftArrow, KeyCode.rightArrow].includes(keyCode)) {
+      updater({ rotation: 0 });
+    } else if (keyCode === KeyCode.upArrow) {
+      updater({ thrust: 0 });
+    }
+  };
+};
+
+const pauseGame = (queue: ISystemQueue) => () => {
+  queue.enqueue((world) => ({ ...world, paused: !world.paused }));
+};
+
+const fireMissile = (queue: ISystemQueue) => () => {
+  queue.enqueue((world) => {
+    const ship = world.particles.find((particle) => particle.family === "ship");
+    if (ship) {
+      const pos = getPosition(ship);
+      const angle = getAngle(ship);
+      const missile = particleFactory({
+        family: "missile",
+        components: [
+          pos!,
+          { radius: 2 } as IRadius,
+          {
+            velocity: {
+              x: 6 * Math.cos(angle ? angle.angle : 0),
+              y: 6 * Math.sin(angle ? angle.angle : 0) * -1,
+            },
+          } as IMovement,
+        ],
+      });
+      const particles = [...world.particles, missile];
+      return { ...world, particles };
+    }
+    return world;
+  });
+};
+
 const collisionHandler: CollisionHandler = (event) => (world) => {
-  return shipCollisionSystem(event)(world);
+  const missileCheck = missileCollisionSystem(event);
+  const shipCheck = shipCollisionSystem(event);
+  return missileCheck(shipCheck(world));
 };
 
 const update = (ctx: CanvasRenderingContext2D) =>
@@ -255,74 +395,13 @@ const Board = () => {
     );
   }, [size, setGameState]);
 
-  const updateShip = React.useCallback(
-    (value: Partial<IAngle> | Partial<IThrust>) => () => {
-      queue.enqueue((world) => {
-        const particles = world.particles.map((particle) =>
-          particle.family === "ship"
-            ? {
-                ...particle,
-                components: particle.components.map((component) => {
-                  if (isThrust(value) && isThrust(component)) {
-                    return { ...component, ...value };
-                  } else if (isAngle(value) && isAngle(component)) {
-                    return { ...component, ...value };
-                  }
-                  return component;
-                }),
-              }
-            : particle
-        );
-        return { ...world, particles };
-      });
-    },
-    [queue]
-  );
-
-  const fire = React.useCallback(() => {
-    queue.enqueue((world) => {
-      const ship = world.particles.find(
-        (particle) => particle.family === "ship"
-      );
-      if (ship) {
-        const pos = getPosition(ship);
-        const angle = getAngle(ship);
-        const missile = particleFactory({
-          family: "missile",
-          components: [
-            pos!,
-            { radius: 2 } as IRadius,
-            {
-              velocity: {
-                x: 6 * Math.cos(angle ? angle.angle : 0),
-                y: 6 * Math.sin(angle ? angle.angle : 0) * -1,
-              },
-            } as IMovement,
-          ],
-        });
-        debugger;
-        const particles = [...world.particles, missile];
-        return { ...world, particles };
-      }
-      return world;
-    });
-  }, [queue]);
-
   useGameControls({
-    leftArrow: updateShip({ rotation: ((TURN_SPEED / 180) * Math.PI) / FPS }),
-    rightArrow: updateShip({ rotation: ((-TURN_SPEED / 180) * Math.PI) / FPS }),
-    upArrow: updateShip({ thrust: SHIP_THRUST }),
-    spaceBar: fire,
-    keyUp: (keyCode = 0) => {
-      if ([KeyCode.leftArrow, KeyCode.rightArrow].includes(keyCode)) {
-        updateShip({ rotation: 0 })();
-      } else if (keyCode === KeyCode.upArrow) {
-        updateShip({ thrust: 0 })();
-      }
-    },
-    pause: () => {
-      queue.enqueue((world) => ({ ...world, paused: !world.paused }));
-    },
+    leftArrow: rotateLeft(queue),
+    rightArrow: rotateRight(queue),
+    upArrow: thrustForward(queue),
+    spaceBar: fireMissile(queue),
+    keyUp: stopMovement(queue),
+    pause: pauseGame(queue),
     multipleKeys: true,
   });
 

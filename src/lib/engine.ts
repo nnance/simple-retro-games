@@ -23,6 +23,9 @@ export const particleFactory = (particle: Partial<IParticle>): IParticle => ({
 export const random = (min: number, max: number) =>
   Math.random() * (max - min) + min;
 
+export const randomInt = (min: number, max: number) =>
+  Math.ceil(Math.random() * (max - min) + min);
+
 export const updater = (systems: ISystem[]) => (world: IWorld): IWorld => {
   const updated = systems.reduce((prev, system) => system(prev), world);
   return updated.paused ? { ...world, paused: true } : updated;
